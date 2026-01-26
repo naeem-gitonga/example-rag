@@ -1,0 +1,95 @@
+services:
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  minio-setup:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc mb local/lancedb --ignore-existing;
+      echo 'Bucket created';
+      "
+
+  # embedding:
+  #   build:
+  #     context: ./embedding
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8001:8001"
+  #   environment:
+  #     MODEL_NAME: all-MiniLM-L6-v2
+
+  ingestion:
+    build:
+      context: .
+      dockerfile: ingestion/Dockerfile
+    ports:
+      - "8002:8002"
+    depends_on:
+      - minio
+      - minio-setup
+      # - embedding
+    environment:
+      LANCEDB_URI: s3://lancedb/journal
+      S3_ENDPOINT: http://minio:9000
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_REGION: us-east-1
+      EMBEDDING_SERVICE_URL: http://embedding:8001
+
+  query:
+    build:
+      context: .
+      dockerfile: query/Dockerfile
+    ports:
+      - "8003:8003"
+    depends_on:
+      - minio
+      - minio-setup
+      # - embedding
+    environment:
+      LANCEDB_URI: s3://lancedb/journal
+      S3_ENDPOINT: http://minio:9000
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_REGION: us-east-1
+      EMBEDDING_SERVICE_URL: http://embedding:8001
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.dev
+      target: dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      - ingestion
+      - query
+    environment:
+      NEXT_PUBLIC_INGESTION_API_URL: http://localhost:8002
+      NEXT_PUBLIC_QUERY_API_URL: http://localhost:8003
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  minio-data:
