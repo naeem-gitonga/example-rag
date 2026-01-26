@@ -6,7 +6,7 @@ describe("operations", () => {
   describe("addEntry", () => {
     it("should add entry to table and return id", async () => {
       const mockTable = {
-        add: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        add: jest.fn<(data: any[]) => Promise<void>>().mockResolvedValue(undefined),
       };
 
       const params: AddEntryParams = {
@@ -39,7 +39,7 @@ describe("operations", () => {
 
     it("should use entryId when provided", async () => {
       const mockTable = {
-        add: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        add: jest.fn<(data: any[]) => Promise<void>>().mockResolvedValue(undefined),
       };
 
       const params: AddEntryParams = {
@@ -64,7 +64,7 @@ describe("operations", () => {
 
     it("should generate unique ids for each entry", async () => {
       const mockTable = {
-        add: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        add: jest.fn<(data: any[]) => Promise<void>>().mockResolvedValue(undefined),
       };
 
       const params: AddEntryParams = {
