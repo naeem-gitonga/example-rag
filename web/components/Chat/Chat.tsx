@@ -46,7 +46,7 @@ export function Chat({ wsUrl, sessionId }: ChatProps) {
       <div className={styles.chatFooter}>
         <MessageInput
           onSend={sendMessage}
-          disabled={!isConnected || isLoading}
+          disabled={!isConnected}
           placeholder={
             isConnected ? 'Type a message...' : 'Waiting for connection...'
           }

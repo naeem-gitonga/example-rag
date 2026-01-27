@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, KeyboardEvent, ChangeEvent } from 'react'
+import { useState, useCallback, useRef, KeyboardEvent, ChangeEvent } from 'react'
 import styles from './Chat.module.scss'
 
 interface MessageInputProps {
@@ -15,6 +15,7 @@ export function MessageInput({
   placeholder = 'Type a message...',
 }: MessageInputProps) {
   const [input, setInput] = useState('')
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const handleChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
@@ -24,6 +25,7 @@ export function MessageInput({
     if (input.trim() && !disabled) {
       onSend(input)
       setInput('')
+      inputRef.current?.focus()
     }
   }, [input, disabled, onSend])
 
@@ -40,6 +42,7 @@ export function MessageInput({
   return (
     <div className={styles.inputContainer}>
       <textarea
+        ref={inputRef}
         className={styles.messageInput}
         value={input}
         onChange={handleChange}

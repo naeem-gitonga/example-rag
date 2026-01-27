@@ -9,6 +9,8 @@ export interface AppConfig {
   awsSecretAccessKey: string;
   awsRegion: string;
   embeddingServiceUrl: string;
+  mongoUri: string;
+  mongoDbName: string;
 }
 
 export function loadConfig(): AppConfig {
@@ -26,5 +28,7 @@ export function loadConfig(): AppConfig {
     awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "minioadmin",
     awsRegion: process.env.AWS_REGION ?? "us-east-1",
     embeddingServiceUrl: process.env.EMBEDDING_SERVICE_URL ?? "http://localhost:8001",
+    mongoUri: process.env.MONGO_URI ?? "mongodb://root:example@mongo:27017",
+    mongoDbName: process.env.MONGO_DB_NAME ?? "example_rag",
   };
 }
