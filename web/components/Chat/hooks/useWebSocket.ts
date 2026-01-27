@@ -34,6 +34,7 @@ export function useWebSocket({
   const socketRef = useRef<WebSocket | null>(null)
   const reconnectCountRef = useRef(0)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isDisconnectingRef = useRef(false)
 
   const clearReconnectTimeout = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -48,6 +49,7 @@ export function useWebSocket({
     }
 
     clearReconnectTimeout()
+    isDisconnectingRef.current = false
     setStatus('connecting')
 
     try {
@@ -70,6 +72,9 @@ export function useWebSocket({
       }
 
       socket.onclose = () => {
+        // Skip callbacks and reconnect during intentional disconnect
+        if (isDisconnectingRef.current) return
+
         setStatus('disconnected')
         onClose?.()
 
@@ -83,6 +88,8 @@ export function useWebSocket({
       }
 
       socket.onerror = (error) => {
+        // Ignore errors during intentional disconnect (e.g., React Strict Mode cleanup)
+        if (isDisconnectingRef.current) return
         setStatus('error')
         onError?.(error)
       }
@@ -95,6 +102,7 @@ export function useWebSocket({
   const disconnect = useCallback(() => {
     clearReconnectTimeout()
     reconnectCountRef.current = reconnectAttempts // Prevent auto-reconnect
+    isDisconnectingRef.current = true
 
     if (socketRef.current) {
       socketRef.current.close()
