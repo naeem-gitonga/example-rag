@@ -47,6 +47,25 @@ services:
               count: 1
               capabilities: [gpu]
 
+  llm:
+    build:
+      context: ./llm
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8004"
+    volumes:
+      - ./llm/models:/app/models
+    environment:
+      LLM_MODEL_PATH: /app/models/qwen2.5-3b-instruct
+      LLM_PORT: "8004"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
   ingestion:
     build:
       context: .
