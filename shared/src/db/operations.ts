@@ -9,7 +9,7 @@ export async function addEntry(
 
   const entry: JournalEntry = {
     id,
-    entry_id: params.entryId ?? null,
+    entry_id: params.entryId ?? "",  // Use empty string instead of null for LanceDB compatibility
     entry_date: params.entryDate,
     chunk_index: params.chunkIndex,
     text: params.text,

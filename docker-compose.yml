@@ -110,8 +110,10 @@ services:
       - "3000:3000"
     depends_on:
       - gateway
+      - ingestion
     environment:
       NEXT_PUBLIC_GATEWAY_WS_URL: ws://localhost:8080/ws
+      INGESTION_LAMBDA_URL: http://ingestion:8080/2015-03-31/functions/function/invocations
     volumes:
       - ./web:/app
       - /app/node_modules
@@ -150,6 +152,11 @@ services:
 
 volumes:
   minio-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/minio-data
   mongo_data:
     driver: local
     driver_opts:

@@ -1,5 +1,5 @@
 import { connect, Connection, Table } from "@lancedb/lancedb";
-import { loadConfig, TABLE_NAME } from "../config";
+import { loadConfig, TABLE_NAME, VECTOR_DIMENSION } from "../config";
 import { JournalEntry } from "../types";
 
 const config = loadConfig();
@@ -19,6 +19,7 @@ export async function initConnection(connectDep = connect): Promise<Connection> 
       awsSecretAccessKey: config.awsSecretAccessKey,
       awsEndpoint: config.s3Endpoint,
       awsRegion: config.awsRegion,
+      ...(config.s3AllowHttp && { allowHttp: "true" }),
     },
   });
   console.log("LanceDB connection established");
@@ -42,8 +43,22 @@ export async function getTable(
     table = await db.openTable(TABLE_NAME);
   } else if (createIfMissing) {
     console.log(`Creating new table: ${TABLE_NAME}`);
-    const emptyData: JournalEntry[] = [];
-    table = await db.createTable(TABLE_NAME, emptyData);
+    // Create table with a placeholder record to establish schema
+    // LanceDB requires at least one record or a schema to create a table
+    const placeholderEntry: JournalEntry = {
+      id: "__placeholder__",
+      entry_id: "",
+      entry_date: "1970-01-01",
+      chunk_index: 0,
+      text: "__placeholder__",
+      vector: new Array(VECTOR_DIMENSION).fill(0),
+      moods: ["__placeholder__"],  // Non-empty array for type inference
+      word_count: 0,
+    };
+    table = await db.createTable(TABLE_NAME, [placeholderEntry]);
+    // Delete the placeholder record
+    await table.delete('id = "__placeholder__"');
+    console.log(`Table ${TABLE_NAME} created with schema`);
   } else {
     throw new Error(`Table ${TABLE_NAME} does not exist. Ingest data first.`);
   }
