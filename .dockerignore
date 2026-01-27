@@ -1,0 +1,27 @@
+# Database data (owned by mongodb, causes permission issues)
+db/data
+
+# Virtual environments
+.venv
+*/.venv
+**/.venv
+
+# Node modules (each service has its own)
+node_modules
+**/node_modules
+
+# Git
+.git
+
+# IDE
+.idea
+.vscode
+
+# Python cache
+__pycache__
+**/__pycache__
+*.pyc
+
+# Next.js
+.next
+**/.next
