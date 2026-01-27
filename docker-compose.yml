@@ -40,9 +40,9 @@ services:
   ingestion:
     build:
       context: .
-      dockerfile: ingestion/Dockerfile
+      dockerfile: ingestion/Dockerfile.dev
     ports:
-      - "8002:8002"
+      - "8002:8080"
     depends_on:
       - minio
       - minio-setup
@@ -58,9 +58,9 @@ services:
   query:
     build:
       context: .
-      dockerfile: query/Dockerfile
+      dockerfile: query/Dockerfile.dev
     ports:
-      - "8003:8003"
+      - "8003:8080"
     depends_on:
       - minio
       - minio-setup
@@ -84,8 +84,8 @@ services:
       - ingestion
       - query
     environment:
-      NEXT_PUBLIC_INGESTION_API_URL: http://localhost:8002
-      NEXT_PUBLIC_QUERY_API_URL: http://localhost:8003
+      NEXT_PUBLIC_INGESTION_API_URL: http://localhost:8002/2015-03-31/functions/function/invocations
+      NEXT_PUBLIC_QUERY_API_URL: http://localhost:8003/2015-03-31/functions/function/invocations
     volumes:
       - ./web:/app
       - /app/node_modules
