@@ -1,5 +1,5 @@
 export const TABLE_NAME = "journal_entries";
-export const VECTOR_DIMENSION = 384; // all-MiniLM-L6-v2 outputs 384 dimensions
+export const VECTOR_DIMENSION = 1024; // all-MiniLM-L6-v2 outputs 384 dimensions
 
 export interface AppConfig {
   lancedbUri: string;

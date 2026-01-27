@@ -77,6 +77,12 @@ help() {
     echo "  ./scripts rebuild tts"
 }
 
+setup() {
+    echo "Setting up environment..."
+    hf download Qwen/Qwen3-Embedding-0.6B --local-dir ~/projects/example-rag/embedding/models/qwen3-embedding-0.6b --force
+    echo "Setup complete."
+}   
+
 # Main command router
 case "$1" in
     start)
@@ -99,6 +105,9 @@ case "$1" in
         ;;
     help|--help|-h|"")
         help
+        ;;
+    setup)
+        setup
         ;;
     *)
         echo "Error: Unknown command '$1'"

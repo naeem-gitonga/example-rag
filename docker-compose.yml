@@ -40,9 +40,9 @@ services:
   ingestion:
     build:
       context: .
-      dockerfile: ingestion/Dockerfile
+      dockerfile: ingestion/Dockerfile.dev
     ports:
-      - "8002:8002"
+      - "8002:8080"
     depends_on:
       - minio
       - minio-setup
@@ -58,9 +58,9 @@ services:
   query:
     build:
       context: .
-      dockerfile: query/Dockerfile
+      dockerfile: query/Dockerfile.dev
     ports:
-      - "8003:8003"
+      - "8003:8080"
     depends_on:
       - minio
       - minio-setup
@@ -73,6 +73,24 @@ services:
       AWS_REGION: us-east-1
       EMBEDDING_SERVICE_URL: http://embedding:8001
 
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile.dev
+      target: dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ingestion
+      - query
+    environment:
+      GATEWAY_PORT: "8080"
+      INGESTION_LAMBDA_ENDPOINT: http://ingestion:8080
+      QUERY_LAMBDA_ENDPOINT: http://query:8080
+    volumes:
+      - ./gateway:/app
+      - /app/node_modules
+
   web:
     build:
       context: ./web
@@ -81,11 +99,9 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - ingestion
-      - query
+      - gateway
     environment:
-      NEXT_PUBLIC_INGESTION_API_URL: http://localhost:8002
-      NEXT_PUBLIC_QUERY_API_URL: http://localhost:8003
+      NEXT_PUBLIC_GATEWAY_WS_URL: ws://localhost:8080/ws
     volumes:
       - ./web:/app
       - /app/node_modules
