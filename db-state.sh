@@ -46,10 +46,11 @@ async function main() {
   results.forEach((r, i) => {
     const vectorLen = r.vector ? (Array.isArray(r.vector) ? r.vector.length : r.vector.length) : 0;
     const hasVector = vectorLen === 1024;
-    const text = r.text.substring(0, colText - 2) + (r.text.length > colText - 2 ? '..' : '');
+    const cleanText = r.text.replace(/[\r\n]+/g, ' ');
+    const text = cleanText.substring(0, colText - 2) + (cleanText.length > colText - 2 ? '..' : '');
     const vectorStatus = hasVector ? '✓ 1024-dim' : '✗ Missing';
 
-    console.log('│' + padCenter(i + 1, colNum) + '│ ' + pad(r.entry_date, colDate - 2) + ' │ ' + pad(text, colText - 2) + '│' + padCenter(vectorStatus, colVector) + '│');
+    console.log('│' + padCenter(i + 1, colNum) + '│ ' + pad(r.entry_date, colDate - 2) + ' │ ' + pad(text, colText - 2) + ' │' + padCenter(vectorStatus, colVector) + '│');
   });
 
   console.log(bot);

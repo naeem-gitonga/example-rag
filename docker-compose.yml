@@ -133,8 +133,8 @@ services:
     volumes:
       # Persistent data volume with 1GB limit (enforced at Docker level)
       - mongo_data:/data/db
-      # Initialization script
-      - ./db/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+      # Initialization script (runs on first startup when data dir is empty)
+      - ./db/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
       # MongoDB configuration
       - ./db/mongod.conf:/etc/mongod.conf:ro
     deploy:
