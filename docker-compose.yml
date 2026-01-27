@@ -103,8 +103,8 @@ services:
 
   web:
     build:
-      context: ./web
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: web/Dockerfile.dev
       target: dev
     ports:
       - "3000:3000"
@@ -112,10 +112,11 @@ services:
       - gateway
       - ingestion
     environment:
-      NEXT_PUBLIC_GATEWAY_WS_URL: ws://localhost:8080/ws
+      NEXT_PUBLIC_WS_URL: ws://localhost:8080/ws
       INGESTION_LAMBDA_URL: http://ingestion:8080/2015-03-31/functions/function/invocations
     volumes:
       - ./web:/app
+      - ./shared:/shared
       - /app/node_modules
       - /app/.next
   
