@@ -1,6 +1,16 @@
 import { forwardRef } from 'react';
 import styles from './DocumentUpload.module.scss';
 
+const {
+  dropzone,
+  dragging,
+  fileInput,
+  dropzoneContent,
+  dropzoneIcon,
+  dropzoneText,
+  dropzoneHint,
+} = styles;
+
 export interface DropZoneProps {
   isDragging: boolean;
   onDragOver: (e: React.DragEvent) => void;
@@ -13,12 +23,12 @@ export interface DropZoneProps {
 
 export const DropZone = forwardRef<HTMLInputElement, DropZoneProps>(
   function DropZone(
-    { isDragging, onDragOver, onDragLeave, onDrop, onClick, onFileSelect, accept = '.txt,.md' },
+    { isDragging: isDraggingState, onDragOver, onDragLeave, onDrop, onClick, onFileSelect, accept = '.txt,.md' },
     ref
   ) {
     return (
       <div
-        className={`${styles.dropzone} ${isDragging ? styles.dragging : ''}`}
+        className={`${dropzone} ${isDraggingState ? dragging : ''}`}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
@@ -29,15 +39,15 @@ export const DropZone = forwardRef<HTMLInputElement, DropZoneProps>(
           type="file"
           multiple
           onChange={onFileSelect}
-          className={styles.fileInput}
+          className={fileInput}
           accept={accept}
         />
-        <div className={styles.dropzoneContent}>
-          <span className={styles.dropzoneIcon}>📁</span>
-          <p className={styles.dropzoneText}>
+        <div className={dropzoneContent}>
+          <span className={dropzoneIcon}>📁</span>
+          <p className={dropzoneText}>
             Drag and drop files here, or click to select
           </p>
-          <p className={styles.dropzoneHint}>Supports TXT, MD files</p>
+          <p className={dropzoneHint}>Supports TXT, MD files</p>
         </div>
       </div>
     );

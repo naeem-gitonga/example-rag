@@ -7,6 +7,8 @@ import { DropZone } from './DropZone';
 import { FileList } from './FileList';
 import styles from './DocumentUpload.module.scss';
 
+const { fileUploadForm, formRow } = styles;
+
 export function FileUploadForm() {
   const {
     files,
@@ -28,8 +30,8 @@ export function FileUploadForm() {
   } = useFileUpload();
 
   return (
-    <div className={styles.fileUploadForm}>
-      <div className={styles.formRow}>
+    <div className={fileUploadForm}>
+      <div className={formRow}>
         <DateInput
           value={fileDate}
           onChange={setFileDate}

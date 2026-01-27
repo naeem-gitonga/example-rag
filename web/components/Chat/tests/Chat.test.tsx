@@ -113,14 +113,14 @@ describe('Chat', () => {
     expect(screen.getByTestId('input')).toBeDisabled();
   });
 
-  it('should disable input when loading', () => {
+  it('should keep input enabled when loading (allows queuing messages)', () => {
     mockUseChat.mockReturnValue({ ...defaultMockReturn, isLoading: true });
 
     render(<Chat wsUrl="ws://localhost:8080/ws" />);
-    expect(screen.getByTestId('input')).toBeDisabled();
+    expect(screen.getByTestId('input')).not.toBeDisabled();
   });
 
-  it('should enable input when connected and not loading', () => {
+  it('should enable input when connected', () => {
     render(<Chat wsUrl="ws://localhost:8080/ws" />);
     expect(screen.getByTestId('input')).not.toBeDisabled();
   });

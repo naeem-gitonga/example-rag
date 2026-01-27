@@ -1,6 +1,14 @@
 import { AVAILABLE_MOODS } from './types';
 import styles from './DocumentUpload.module.scss';
 
+const {
+  formGroup,
+  label: labelStyle,
+  moodSelector,
+  moodChip,
+  selected,
+} = styles;
+
 export interface MoodSelectorProps {
   selectedMoods: string[];
   onToggle: (mood: string) => void;
@@ -9,16 +17,14 @@ export interface MoodSelectorProps {
 
 export function MoodSelector({ selectedMoods, onToggle, label = 'Moods' }: MoodSelectorProps) {
   return (
-    <div className={styles.formGroup}>
-      <label className={styles.label}>{label}</label>
-      <div className={styles.moodSelector}>
+    <div className={formGroup}>
+      <label className={labelStyle}>{label}</label>
+      <div className={moodSelector}>
         {AVAILABLE_MOODS.map((mood) => (
           <button
             key={mood}
             type="button"
-            className={`${styles.moodChip} ${
-              selectedMoods.includes(mood) ? styles.selected : ''
-            }`}
+            className={`${moodChip} ${selectedMoods.includes(mood) ? selected : ''}`}
             onClick={() => onToggle(mood)}
           >
             {mood}

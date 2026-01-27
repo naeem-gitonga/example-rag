@@ -53,6 +53,10 @@ export function useChat({ wsUrl, sessionId }: UseChatOptions): UseChatReturn {
     }
   }, [currentSessionId])
 
+  const handleOpen = useCallback(() => {
+    setError(null)
+  }, [])
+
   const handleError = useCallback(() => {
     setError('Connection error')
     setIsLoading(false)
@@ -61,6 +65,7 @@ export function useChat({ wsUrl, sessionId }: UseChatOptions): UseChatReturn {
   const { status, send } = useWebSocket({
     url: wsUrl,
     onMessage: handleMessage,
+    onOpen: handleOpen,
     onError: handleError,
   })
 

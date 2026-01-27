@@ -6,6 +6,16 @@ import { MessageInput } from './MessageInput'
 import { ConnectionStatus } from './ConnectionStatus'
 import styles from './Chat.module.scss'
 
+const {
+  chatContainer,
+  chatHeader,
+  title,
+  errorBanner,
+  dismissButton,
+  chatBody,
+  chatFooter,
+} = styles
+
 interface ChatProps {
   wsUrl: string
   sessionId?: string
@@ -24,26 +34,26 @@ export function Chat({ wsUrl, sessionId }: ChatProps) {
   const isConnected = connectionStatus === 'connected'
 
   return (
-    <div className={styles.chatContainer}>
-      <div className={styles.chatHeader}>
-        <h2 className={styles.title}>Chat</h2>
+    <div className={chatContainer}>
+      <div className={chatHeader}>
+        <h2 className={title}>Chat</h2>
         <ConnectionStatus status={connectionStatus} />
       </div>
 
       {error && (
-        <div className={styles.errorBanner}>
+        <div className={errorBanner}>
           <span>{error}</span>
-          <button onClick={clearError} className={styles.dismissButton}>
+          <button onClick={clearError} className={dismissButton}>
             Dismiss
           </button>
         </div>
       )}
 
-      <div className={styles.chatBody}>
+      <div className={chatBody}>
         <MessageList messages={messages} isLoading={isLoading} />
       </div>
 
-      <div className={styles.chatFooter}>
+      <div className={chatFooter}>
         <MessageInput
           onSend={sendMessage}
           disabled={!isConnected}

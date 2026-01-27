@@ -4,6 +4,24 @@ import { useEffect, useRef } from 'react'
 import { ChatMessage } from '@shared/chat-types'
 import styles from './Chat.module.scss'
 
+const {
+  emptyState,
+  messageList,
+  message,
+  messageContent,
+  roleLabel,
+  messageText,
+  ragContext,
+  contextLabel,
+  contextList,
+  contextItem,
+  contextDate,
+  contextSnippet,
+  timestamp,
+  assistant,
+  typingIndicator,
+} = styles
+
 interface MessageListProps {
   messages: ChatMessage[]
   isLoading: boolean
@@ -26,48 +44,48 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
 
   if (messages.length === 0 && !isLoading) {
     return (
-      <div className={styles.emptyState}>
+      <div className={emptyState}>
         <p>Start a conversation by typing a message below.</p>
       </div>
     )
   }
 
   return (
-    <div className={styles.messageList}>
-      {messages.map((message) => (
+    <div className={messageList}>
+      {messages.map((msg) => (
         <div
-          key={message.message_id}
-          className={`${styles.message} ${styles[message.role]}`}
+          key={msg.message_id}
+          className={`${message} ${styles[msg.role]}`}
         >
-          <div className={styles.messageContent}>
-            <span className={styles.roleLabel}>
-              {message.role === 'user' ? 'You' : 'Assistant'}
+          <div className={messageContent}>
+            <span className={roleLabel}>
+              {msg.role === 'user' ? 'You' : 'Assistant'}
             </span>
-            <p className={styles.messageText}>{message.content}</p>
-            {message.rag_context && message.rag_context.length > 0 && (
-              <div className={styles.ragContext}>
-                <span className={styles.contextLabel}>Sources:</span>
-                <ul className={styles.contextList}>
-                  {message.rag_context.map((ctx, idx) => (
-                    <li key={idx} className={styles.contextItem}>
-                      <span className={styles.contextDate}>{ctx.entry_date}</span>
-                      <span className={styles.contextSnippet}>{ctx.text_snippet}</span>
+            <p className={messageText}>{msg.content}</p>
+            {msg.rag_context && msg.rag_context.length > 0 && (
+              <div className={ragContext}>
+                <span className={contextLabel}>Sources:</span>
+                <ul className={contextList}>
+                  {msg.rag_context.map((ctx, idx) => (
+                    <li key={idx} className={contextItem}>
+                      <span className={contextDate}>{ctx.entry_date}</span>
+                      <span className={contextSnippet}>{ctx.text_snippet}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-            <span className={styles.timestamp}>
-              {formatTime(new Date(message.created_at))}
+            <span className={timestamp}>
+              {formatTime(new Date(msg.created_at))}
             </span>
           </div>
         </div>
       ))}
       {isLoading && (
-        <div className={`${styles.message} ${styles.assistant}`}>
-          <div className={styles.messageContent}>
-            <span className={styles.roleLabel}>Assistant</span>
-            <div className={styles.typingIndicator}>
+        <div className={`${message} ${assistant}`}>
+          <div className={messageContent}>
+            <span className={roleLabel}>Assistant</span>
+            <div className={typingIndicator}>
               <span></span>
               <span></span>
               <span></span>

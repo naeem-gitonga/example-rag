@@ -3,6 +3,8 @@
 import { useState, useCallback, useRef, KeyboardEvent, ChangeEvent } from 'react'
 import styles from './Chat.module.scss'
 
+const { inputContainer, messageInput, sendButton } = styles
+
 interface MessageInputProps {
   onSend: (message: string) => void
   disabled?: boolean
@@ -40,10 +42,10 @@ export function MessageInput({
   )
 
   return (
-    <div className={styles.inputContainer}>
+    <div className={inputContainer}>
       <textarea
         ref={inputRef}
-        className={styles.messageInput}
+        className={messageInput}
         value={input}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
@@ -53,7 +55,7 @@ export function MessageInput({
         aria-label="Message input"
       />
       <button
-        className={styles.sendButton}
+        className={sendButton}
         onClick={handleSubmit}
         disabled={disabled || !input.trim()}
         aria-label="Send message"

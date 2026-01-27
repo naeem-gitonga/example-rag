@@ -1,6 +1,25 @@
 import { UploadStatus } from './types';
 import styles from './DocumentUpload.module.scss';
 
+const {
+  fileList,
+  fileListHeader,
+  fileListActions,
+  secondaryButton,
+  primaryButton,
+  files: filesStyle,
+  fileItem,
+  fileInfo,
+  fileName,
+  fileSize,
+  fileStatus,
+  statusPending,
+  statusUploading,
+  statusSuccess,
+  statusError,
+  removeButton,
+} = styles;
+
 export interface FileListProps {
   files: File[];
   statuses: UploadStatus[];
@@ -19,20 +38,20 @@ export function FileList({
   if (files.length === 0) return null;
 
   return (
-    <div className={styles.fileList}>
-      <div className={styles.fileListHeader}>
+    <div className={fileList}>
+      <div className={fileListHeader}>
         <h2>Selected Files ({files.length})</h2>
-        <div className={styles.fileListActions}>
-          <button onClick={onClearCompleted} className={styles.secondaryButton}>
+        <div className={fileListActions}>
+          <button onClick={onClearCompleted} className={secondaryButton}>
             Clear Completed
           </button>
-          <button onClick={onUploadAll} className={styles.primaryButton}>
+          <button onClick={onUploadAll} className={primaryButton}>
             Upload All
           </button>
         </div>
       </div>
 
-      <ul className={styles.files}>
+      <ul className={filesStyle}>
         {files.map((file, index) => (
           <FileListItem
             key={`${file.name}-${index}`}
@@ -54,26 +73,26 @@ interface FileListItemProps {
 
 function FileListItem({ file, status, onRemove }: FileListItemProps) {
   return (
-    <li className={styles.fileItem}>
-      <div className={styles.fileInfo}>
-        <span className={styles.fileName}>{file.name}</span>
-        <span className={styles.fileSize}>{(file.size / 1024).toFixed(1)} KB</span>
+    <li className={fileItem}>
+      <div className={fileInfo}>
+        <span className={fileName}>{file.name}</span>
+        <span className={fileSize}>{(file.size / 1024).toFixed(1)} KB</span>
       </div>
-      <div className={styles.fileStatus}>
+      <div className={fileStatus}>
         {status?.status === 'pending' && (
-          <span className={styles.statusPending}>Pending</span>
+          <span className={statusPending}>Pending</span>
         )}
         {status?.status === 'uploading' && (
-          <span className={styles.statusUploading}>Uploading...</span>
+          <span className={statusUploading}>Uploading...</span>
         )}
         {status?.status === 'success' && (
-          <span className={styles.statusSuccess}>Uploaded</span>
+          <span className={statusSuccess}>Uploaded</span>
         )}
         {status?.status === 'error' && (
-          <span className={styles.statusError}>{status.message}</span>
+          <span className={statusError}>{status.message}</span>
         )}
         {status?.status === 'pending' && (
-          <button onClick={onRemove} className={styles.removeButton}>
+          <button onClick={onRemove} className={removeButton}>
             Remove
           </button>
         )}
