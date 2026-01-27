@@ -21,7 +21,13 @@ interface HealthMessage {
   service?: "ingestion" | "query";
 }
 
-type ClientMessage = IngestMessage | QueryMessage | HealthMessage;
+interface ChatMessage {
+  action: "chat";
+  message: string;
+  sessionId?: string;
+}
+
+type ClientMessage = IngestMessage | QueryMessage | HealthMessage | ChatMessage;
 
 function isValidMessage(data: unknown): data is ClientMessage {
   if (typeof data !== "object" || data === null) return false;
@@ -65,6 +71,10 @@ export async function handleMessage(
         await handleHealth(socket, message);
         break;
 
+      case "chat":
+        await handleChat(socket, sessionId, message);
+        break;
+
       default:
         sendError(socket, `Unknown action: ${(message as { action: string }).action}`);
     }
@@ -105,6 +115,18 @@ async function handleHealth(socket: WebSocket, message: HealthMessage): Promise<
   const service = message.service ?? "ingestion";
   const response = await invokeLambda(service, { action: "health" });
   sendResponse(socket, "health", { service, ...response });
+}
+
+async function handleChat(socket: WebSocket, sessionId: string, message: ChatMessage): Promise<void> {
+  const response = await invokeLambda("query", {
+    action: "chat",
+    body: {
+      message: message.message,
+      sessionId: message.sessionId ?? sessionId,
+    },
+  });
+  console.log(`[session ${sessionId}] chat response:`, response);
+  sendResponse(socket, "chat", response);
 }
 
 function sendResponse(socket: WebSocket, action: string, data: unknown): void {

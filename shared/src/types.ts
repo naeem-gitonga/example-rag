@@ -53,7 +53,14 @@ export interface QueryBody {
   limit?: number;
 }
 
+// Chat types
+export interface ChatBody {
+  action?: string;
+  message: string;
+  sessionId?: string;
+}
+
 export interface QueryEvent extends Omit<APIGatewayProxyEvent, "body"> {
   action?: string;
-  body: string | QueryBody | null;
+  body: string | QueryBody | ChatBody | null;
 }
