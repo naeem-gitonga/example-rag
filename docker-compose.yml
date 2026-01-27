@@ -106,6 +106,37 @@ services:
       - ./web:/app
       - /app/node_modules
       - /app/.next
+  
+  mongo:
+    image: mongodb:8.2.3-noble
+    container_name: example-rag-mongodb
+    restart: unless-stopped
+
+    ports:
+      - "9002:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: example_rag
+    volumes:
+      # Persistent data volume with 1GB limit (enforced at Docker level)
+      - mongo_data:/data/db
+      # Initialization script
+      - ./db/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+      # MongoDB configuration
+      - ./db/mongod.conf:/etc/mongod.conf:ro
+    deploy:
+      resources:
+        limits:
+          memory: 512M  # Limit container memory
+    # MongoDB configuration loaded from mongod.conf
+    command: ["mongod", "--config", "/etc/mongod.conf"]
+    healthcheck:
+      test: mongosh --eval 'db.runCommand("ping").ok' localhost:27017/example_rag --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
 volumes:
   minio-data:
