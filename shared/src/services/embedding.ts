@@ -1,5 +1,7 @@
-interface EmbeddingResponse {
-  embedding: number[];
+interface EmbedResponse {
+  embeddings: number[][];
+  dimension: number;
+  normalized: boolean;
 }
 
 export async function getEmbedding(
@@ -17,6 +19,7 @@ export async function getEmbedding(
     throw new Error(`Embedding service error: ${response.statusText}`);
   }
 
-  const data: EmbeddingResponse = await response.json();
-  return data.embedding;
+  const data: EmbedResponse = await response.json();
+  // The API returns embeddings as array of arrays; we want the first one
+  return data.embeddings[0];
 }

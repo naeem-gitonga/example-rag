@@ -28,14 +28,24 @@ services:
       echo 'Bucket created';
       "
 
-  # embedding:
-  #   build:
-  #     context: ./embedding
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8001:8001"
-  #   environment:
-  #     MODEL_NAME: all-MiniLM-L6-v2
+  embedding:
+    build:
+      context: ./embedding
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./embedding/models:/app/models
+    environment:
+      EMBEDDING_MODEL_PATH: /app/models/qwen3-embedding-0.6b
+      EMBEDDING_PORT: "8001"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
   ingestion:
     build:
@@ -46,7 +56,7 @@ services:
     depends_on:
       - minio
       - minio-setup
-      # - embedding
+      - embedding
     environment:
       LANCEDB_URI: s3://lancedb/journal
       S3_ENDPOINT: http://minio:9000
@@ -100,12 +110,56 @@ services:
       - "3000:3000"
     depends_on:
       - gateway
+      - ingestion
     environment:
       NEXT_PUBLIC_GATEWAY_WS_URL: ws://localhost:8080/ws
+      INGESTION_LAMBDA_URL: http://ingestion:8080/2015-03-31/functions/function/invocations
     volumes:
       - ./web:/app
       - /app/node_modules
       - /app/.next
+  
+  mongo:
+    image: mongo:8.2.3-noble
+    container_name: example-rag-mongodb
+    restart: unless-stopped
+
+    ports:
+      - "9002:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: example_rag
+    volumes:
+      # Persistent data volume with 1GB limit (enforced at Docker level)
+      - mongo_data:/data/db
+      # Initialization script (runs on first startup when data dir is empty)
+      - ./db/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      # MongoDB configuration
+      - ./db/mongod.conf:/etc/mongod.conf:ro
+    deploy:
+      resources:
+        limits:
+          memory: 512M  # Limit container memory
+    # MongoDB configuration loaded from mongod.conf
+    command: ["mongod", "--config", "/etc/mongod.conf"]
+    healthcheck:
+      test: mongosh --eval 'db.runCommand("ping").ok' localhost:27017/example_rag --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
 volumes:
   minio-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/minio-data
+  mongo_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/db/data

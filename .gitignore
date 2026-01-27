@@ -39,3 +39,9 @@ yarn-error.log*
 next-env.d.ts
 
 */models
+*/.venv/
+**/__pycache__/
+*/.pytest_cache/
+db/data/minio-data/
+minio-data/
+db/data/

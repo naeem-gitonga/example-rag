@@ -1,6 +1,7 @@
 import { IngestPayload } from './types';
 
-const INGESTION_API_URL = process.env.NEXT_PUBLIC_INGESTION_API_URL || 'http://localhost:8002';
+// Use local API route to avoid CORS issues (proxies to Lambda)
+const INGESTION_API_URL = '/api/ingest';
 
 export interface SubmitEntryParams {
   entryDate: string;
@@ -15,12 +16,14 @@ export interface ApiResponse {
 }
 
 export async function submitEntry(params: SubmitEntryParams): Promise<ApiResponse> {
-  const payload: IngestPayload = {
+  const payload = {
     action: 'ingest',
-    entry_date: params.entryDate,
-    text: params.text,
-    moods: params.moods,
-    ...(params.entryId && { entry_id: params.entryId }),
+    body: {
+      entry_date: params.entryDate,
+      text: params.text,
+      moods: params.moods,
+      ...(params.entryId && { entry_id: params.entryId }),
+    },
   };
 
   const response = await fetch(INGESTION_API_URL, {

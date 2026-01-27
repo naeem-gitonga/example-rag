@@ -3,7 +3,7 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 export interface JournalEntry {
   [key: string]: unknown;
   id: string;
-  entry_id: string | null;
+  entry_id: string;  // Empty string if not set (LanceDB doesn't handle null well)
   entry_date: string;
   chunk_index: number;
   text: string;
@@ -24,7 +24,7 @@ export interface AddEntryParams {
 
 export interface SearchResult {
   id: string;
-  entry_id: string | null;
+  entry_id: string;
   entry_date: string;
   text: string;
   moods: string[];
