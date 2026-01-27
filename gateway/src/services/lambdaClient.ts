@@ -7,11 +7,11 @@ interface LambdaConfig {
 
 const lambdaConfigs: Record<string, LambdaConfig> = {
   ingestion: {
-    functionName: "ingestion",
+    functionName: process.env.INGESTION_FUNCTION_NAME || "function",
     endpoint: process.env.INGESTION_LAMBDA_ENDPOINT || "http://localhost:8002",
   },
   query: {
-    functionName: "query",
+    functionName: process.env.QUERY_FUNCTION_NAME || "function",
     endpoint: process.env.QUERY_LAMBDA_ENDPOINT || "http://localhost:8003",
   },
 };

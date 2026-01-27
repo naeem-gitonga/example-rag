@@ -23,8 +23,8 @@ interface HealthMessage {
 
 interface ChatMessage {
   action: "chat";
-  message: string;
-  sessionId?: string;
+  content: string;
+  session_id?: string;
 }
 
 type ClientMessage = IngestMessage | QueryMessage | HealthMessage | ChatMessage;
@@ -121,11 +121,11 @@ async function handleChat(socket: WebSocket, sessionId: string, message: ChatMes
   const response = await invokeLambda("query", {
     action: "chat",
     body: {
-      message: message.message,
-      sessionId: message.sessionId ?? sessionId,
+      message: message.content,
+      sessionId: message.session_id ?? sessionId,
     },
   });
-  console.log(`[session ${sessionId}] chat response:`, response);
+
   sendResponse(socket, "chat", response);
 }
 
