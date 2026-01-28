@@ -26,10 +26,29 @@ interface ChatMessage {
   action: "chat";
   content: string;
   session_id?: string;
-  stream?: boolean;
 }
 
-type ClientMessage = IngestMessage | QueryMessage | HealthMessage | ChatMessage;
+interface HistoryMessage {
+  action: "history";
+  session_id: string;
+  limit?: number;
+}
+
+type ClientMessage = IngestMessage | QueryMessage | HealthMessage | ChatMessage | HistoryMessage;
+
+interface RagContext {
+  entry_id: string;
+  entry_date: string;
+  text_snippet: string;
+  score: number;
+}
+
+interface RagResponse {
+  session_id: string;
+  user_message_id: string;
+  system_prompt: string;
+  rag_context: RagContext[];
+}
 
 function isValidMessage(data: unknown): data is ClientMessage {
   if (typeof data !== "object" || data === null) return false;
@@ -77,6 +96,10 @@ export async function handleMessage(
         await handleChat(socket, sessionId, message);
         break;
 
+      case "history":
+        await handleHistory(socket, message);
+        break;
+
       default:
         sendError(socket, `Unknown action: ${(message as { action: string }).action}`);
     }
@@ -117,7 +140,6 @@ async function handleHealth(socket: WebSocket, message: HealthMessage): Promise<
   const service = message.service ?? "ingestion";
 
   if (service === "llm") {
-    // Check LLM service health directly
     try {
       const { checkHealth } = await import("../services/llmClient.js");
       const health = await checkHealth();
@@ -138,130 +160,88 @@ async function handleHealth(socket: WebSocket, message: HealthMessage): Promise<
 
 async function handleChat(socket: WebSocket, sessionId: string, message: ChatMessage): Promise<void> {
   const chatSessionId = message.session_id ?? sessionId;
-  const shouldStream = message.stream !== false; // Default to streaming
 
-  // Step 1: Get RAG context from query service
+  // Step 1: Get RAG context from query service (also saves user message)
   const ragResponse = await invokeLambda("query", {
-    action: "chat",
+    action: "rag",
     body: {
       message: message.content,
       sessionId: chatSessionId,
     },
   });
 
-  // Extract RAG context from response
-  const ragData = ragResponse.data as { rag_context?: unknown[] } | undefined;
-  const ragContext = ragData?.rag_context || [];
+  const ragData = ragResponse.data as RagResponse;
+  const ragContext = ragData.rag_context || [];
+  const systemPrompt = ragData.system_prompt;
 
-  // Step 2: Build messages for LLM with RAG context
-  const systemPrompt = buildSystemPrompt(ragContext);
+  // Step 2: Send stream start event
+  sendResponse(socket, "chat_stream_start", {
+    session_id: chatSessionId,
+    rag_context: ragContext,
+  });
+
+  // Step 3: Stream LLM response
   const llmMessages: LLMChatMessage[] = [
     { role: "system", content: systemPrompt },
     { role: "user", content: message.content },
   ];
 
-  // Step 3: Stream or generate LLM response
-  if (shouldStream) {
-    await streamLLMResponse(socket, chatSessionId, llmMessages, ragContext);
-  } else {
-    await nonStreamingLLMResponse(socket, chatSessionId, llmMessages, ragContext);
-  }
-}
-
-/**
- * Build system prompt with RAG context.
- */
-function buildSystemPrompt(ragContext: unknown[]): string {
-  const basePrompt = `You are a helpful assistant that answers questions about the user's journal entries.
-Use the provided context from their journal to give personalized, relevant responses.
-If the context doesn't contain relevant information, say so honestly.`;
-
-  if (ragContext.length === 0) {
-    return basePrompt + "\n\nNo relevant journal entries were found for this query.";
-  }
-
-  const contextStr = ragContext
-    .map((ctx: unknown, i: number) => {
-      const entry = ctx as { entry_date?: string; text_snippet?: string; score?: number };
-      return `[${i + 1}] Date: ${entry.entry_date || "Unknown"}\n${entry.text_snippet || ""}`;
-    })
-    .join("\n\n");
-
-  return `${basePrompt}\n\nRelevant journal entries:\n${contextStr}`;
-}
-
-/**
- * Stream LLM response tokens to WebSocket client.
- *
- * This is where SSE from LLM service gets proxied to WebSocket.
- * Each token is sent as a separate WebSocket message for real-time "typing" effect.
- */
-async function streamLLMResponse(
-  socket: WebSocket,
-  sessionId: string,
-  messages: LLMChatMessage[],
-  ragContext: unknown[]
-): Promise<void> {
-  // Send stream start event
-  sendResponse(socket, "chat_stream_start", {
-    session_id: sessionId,
-    rag_context: ragContext,
-  });
-
   let fullContent = "";
 
   try {
-    // Stream tokens from LLM service to WebSocket
-    for await (const token of streamChatCompletion({ messages })) {
+    let tokenCount = 0;
+    for await (const token of streamChatCompletion({ messages: llmMessages })) {
       fullContent += token;
+      tokenCount++;
 
-      // Send each token to the client
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(
           JSON.stringify({
             action: "chat_stream_token",
             token,
-            session_id: sessionId,
+            session_id: chatSessionId,
           })
         );
       }
     }
+    console.log(`[chat] Streamed ${tokenCount} tokens`);
 
-    // Send stream end event with full content
+    // Step 4: Save assistant message to MongoDB
+    await invokeLambda("query", {
+      action: "save_message",
+      body: {
+        sessionId: chatSessionId,
+        content: fullContent,
+        ragContext,
+      },
+    });
+
+    // Step 5: Send stream end event
     sendResponse(socket, "chat_stream_end", {
-      session_id: sessionId,
+      session_id: chatSessionId,
       content: fullContent,
       role: "assistant",
       rag_context: ragContext,
     });
   } catch (error) {
-    // Send error event
     sendResponse(socket, "chat_stream_error", {
-      session_id: sessionId,
+      session_id: chatSessionId,
       error: error instanceof Error ? error.message : "Stream error",
       partial_content: fullContent,
     });
   }
 }
 
-/**
- * Non-streaming LLM response (for clients that prefer complete responses).
- */
-async function nonStreamingLLMResponse(
-  socket: WebSocket,
-  sessionId: string,
-  messages: LLMChatMessage[],
-  ragContext: unknown[]
-): Promise<void> {
-  const { chatCompletion } = await import("../services/llmClient.js");
-  const content = await chatCompletion({ messages });
-
-  sendResponse(socket, "chat", {
-    session_id: sessionId,
-    content,
-    role: "assistant",
-    rag_context: ragContext,
+async function handleHistory(socket: WebSocket, message: HistoryMessage): Promise<void> {
+  const response = await invokeLambda("query", {
+    action: "history",
+    body: {
+      sessionId: message.session_id,
+      limit: message.limit,
+    },
   });
+
+  sendResponse(socket, "history", response.data);
 }
 
 function sendResponse(socket: WebSocket, action: string, data: unknown): void {
@@ -272,6 +252,6 @@ function sendResponse(socket: WebSocket, action: string, data: unknown): void {
 
 function sendError(socket: WebSocket, error: string): void {
   if (socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify({ error }));
+    socket.send(JSON.stringify({ action: "error", error }));
   }
 }

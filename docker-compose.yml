@@ -93,7 +93,9 @@ services:
     depends_on:
       - minio
       - minio-setup
-      # - embedding
+      - llm
+      - embedding
+      - mongo
     environment:
       LANCEDB_URI: s3://lancedb/journal
       S3_ENDPOINT: http://minio:9000
@@ -101,6 +103,8 @@ services:
       AWS_SECRET_ACCESS_KEY: minioadmin
       AWS_REGION: us-east-1
       EMBEDDING_SERVICE_URL: http://embedding:8001
+      LLM_SERVICE_URL: http://llm:8004
+      MONGO_URI: mongodb://root:example@mongo:27017
 
   gateway:
     build:
@@ -109,13 +113,11 @@ services:
       target: dev
     ports:
       - "8080:8080"
-    depends_on:
-      - ingestion
-      - query
     environment:
       GATEWAY_PORT: "8080"
       INGESTION_LAMBDA_ENDPOINT: http://ingestion:8080
       QUERY_LAMBDA_ENDPOINT: http://query:8080
+      LLM_SERVICE_URL: http://llm:8004
     volumes:
       - ./gateway:/app
       - /app/node_modules

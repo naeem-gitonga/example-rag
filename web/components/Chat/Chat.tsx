@@ -25,6 +25,7 @@ export function Chat({ wsUrl, sessionId }: ChatProps) {
   const {
     messages,
     isLoading,
+    streamingContent,
     error,
     connectionStatus,
     sendMessage,
@@ -50,7 +51,11 @@ export function Chat({ wsUrl, sessionId }: ChatProps) {
       )}
 
       <div className={chatBody}>
-        <MessageList messages={messages} isLoading={isLoading} />
+        <MessageList
+          messages={messages}
+          isLoading={isLoading}
+          streamingContent={streamingContent}
+        />
       </div>
 
       <div className={chatFooter}>

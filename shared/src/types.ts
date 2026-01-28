@@ -60,6 +60,33 @@ export interface ChatBody {
   sessionId?: string;
 }
 
+// History types
+export interface HistoryBody {
+  action?: string;
+  sessionId: string;
+  limit?: number;
+}
+
+// RAG types (for streaming flow)
+export interface RagBody {
+  action?: string;
+  message: string;
+  sessionId?: string;
+}
+
+// Save message types (for streaming flow)
+export interface SaveMessageBody {
+  action?: string;
+  sessionId: string;
+  content: string;
+  ragContext?: Array<{
+    entry_id: string;
+    entry_date: string;
+    text_snippet: string;
+    score: number;
+  }>;
+}
+
 export interface QueryEvent extends Omit<APIGatewayProxyEvent, "body"> {
   action?: string;
   body: string | QueryBody | ChatBody | null;

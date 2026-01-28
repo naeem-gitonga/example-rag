@@ -180,6 +180,23 @@
   line-height: 1.5;
 }
 
+.streamingText {
+  &::after {
+    content: '▊';
+    animation: blink 1s step-end infinite;
+    margin-left: 2px;
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
 .timestamp {
   display: block;
   font-size: 0.65rem;

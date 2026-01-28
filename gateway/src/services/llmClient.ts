@@ -47,6 +47,8 @@ const LLM_SERVICE_URL = process.env.LLM_SERVICE_URL || "http://llm:8004";
 export async function* streamChatCompletion(
   request: ChatCompletionRequest
 ): AsyncGenerator<string, void, unknown> {
+  console.log("[LLM] Starting stream request...");
+
   const response = await fetch(`${LLM_SERVICE_URL}/v1/chat/completions`, {
     method: "POST",
     headers: {
@@ -58,6 +60,8 @@ export async function* streamChatCompletion(
       stream: true,
     }),
   });
+
+  console.log("[LLM] Response status:", response.status);
 
   if (!response.ok) {
     const error = await response.text();
@@ -71,12 +75,16 @@ export async function* streamChatCompletion(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let tokenCount = 0;
 
   try {
     while (true) {
       const { done, value } = await reader.read();
 
-      if (done) break;
+      if (done) {
+        console.log("[LLM] Stream done, total tokens:", tokenCount);
+        break;
+      }
 
       buffer += decoder.decode(value, { stream: true });
 
@@ -94,6 +102,7 @@ export async function* streamChatCompletion(
 
             // End of stream
             if (data === "[DONE]") {
+              console.log("[LLM] Received [DONE]");
               return;
             }
 
@@ -101,6 +110,7 @@ export async function* streamChatCompletion(
               const chunk: StreamChunk = JSON.parse(data);
               const content = chunk.choices[0]?.delta?.content;
               if (content) {
+                tokenCount++;
                 yield content;
               }
             } catch {

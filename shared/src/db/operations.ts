@@ -26,19 +26,22 @@ export async function addEntry(
 export async function searchSimilar(
   table: Table,
   queryVector: number[],
-  limit: number
+  limit: number,
+  maxDistance: number = 1.2 // Filter out results with distance > threshold (lower = more similar)
 ): Promise<SearchResult[]> {
   const results = await table
     .search(queryVector)
     .limit(limit)
     .toArray();
 
-  return results.map((row: any) => ({
-    id: row.id,
-    entry_id: row.entry_id,
-    entry_date: row.entry_date,
-    text: row.text,
-    moods: row.moods ?? [],
-    score: row._distance ?? 0,
-  }));
+  return results
+    .map((row: any) => ({
+      id: row.id,
+      entry_id: row.entry_id,
+      entry_date: row.entry_date,
+      text: row.text,
+      moods: row.moods ?? [],
+      score: row._distance ?? 0,
+    }))
+    .filter((result) => result.score <= maxDistance);
 }

@@ -4,6 +4,12 @@ FastAPI server for LLM chat completion service.
 import json
 import logging
 import time
+
+# Configure logging to show INFO level messages
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 from contextlib import asynccontextmanager
 from threading import Thread
 from typing import Annotated, AsyncIterator

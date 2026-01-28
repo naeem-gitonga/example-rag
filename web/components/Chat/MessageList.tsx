@@ -20,11 +20,13 @@ const {
   timestamp,
   assistant,
   typingIndicator,
+  streamingText,
 } = styles
 
 interface MessageListProps {
   messages: ChatMessage[]
   isLoading: boolean
+  streamingContent?: string
 }
 
 function formatTime(date: Date): string {
@@ -35,14 +37,29 @@ function formatTime(date: Date): string {
   }).format(date)
 }
 
-export function MessageList({ messages, isLoading }: MessageListProps) {
+export function MessageList({ messages, isLoading, streamingContent }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
+  // Only auto-scroll if user is near the bottom
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isLoading])
+    const container = containerRef.current
+    if (!container) return
 
-  if (messages.length === 0 && !isLoading) {
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
+    if (isNearBottom) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages])
+
+  // Always scroll during streaming (user initiated)
+  useEffect(() => {
+    if (streamingContent || isLoading) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [isLoading]) // Only on isLoading change, not every token
+
+  if (messages.length === 0 && !isLoading && !streamingContent) {
     return (
       <div className={emptyState}>
         <p>Start a conversation by typing a message below.</p>
@@ -51,7 +68,7 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
   }
 
   return (
-    <div className={messageList}>
+    <div className={messageList} ref={containerRef}>
       {messages.map((msg) => (
         <div
           key={msg.message_id}
@@ -81,15 +98,19 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
           </div>
         </div>
       ))}
-      {isLoading && (
+      {(isLoading || streamingContent) && (
         <div className={`${message} ${assistant}`}>
           <div className={messageContent}>
             <span className={roleLabel}>Assistant</span>
-            <div className={typingIndicator}>
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
+            {streamingContent ? (
+              <p className={`${messageText} ${streamingText}`}>{streamingContent}</p>
+            ) : (
+              <div className={typingIndicator}>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            )}
           </div>
         </div>
       )}
