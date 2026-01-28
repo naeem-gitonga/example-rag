@@ -41,9 +41,18 @@ export interface IngestBody {
   chunk_index?: number;
 }
 
+export interface IngestPdfBody {
+  action?: string;
+  entry_date: string;
+  pdf_base64: string;
+  moods: string[];
+  entry_id?: string;
+  filename?: string;
+}
+
 export interface IngestEvent extends Omit<APIGatewayProxyEvent, "body"> {
   action?: string;
-  body: string | IngestBody | null;
+  body: string | IngestBody | IngestPdfBody | null;
 }
 
 // Query types

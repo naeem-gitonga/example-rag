@@ -174,6 +174,8 @@ async function handleChat(socket: WebSocket, sessionId: string, message: ChatMes
   const ragContext = ragData.rag_context || [];
   const systemPrompt = ragData.system_prompt;
 
+  console.log(`[chat] RAG context: ${ragContext.length} entries`, ragContext.map(c => c.entry_date));
+
   // Step 2: Send stream start event
   sendResponse(socket, "chat_stream_start", {
     session_id: chatSessionId,
@@ -217,6 +219,7 @@ async function handleChat(socket: WebSocket, sessionId: string, message: ChatMes
     });
 
     // Step 5: Send stream end event
+    console.log(`[chat] Sending stream end with ${ragContext.length} sources`);
     sendResponse(socket, "chat_stream_end", {
       session_id: chatSessionId,
       content: fullContent,

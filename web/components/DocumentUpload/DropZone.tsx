@@ -23,7 +23,7 @@ export interface DropZoneProps {
 
 export const DropZone = forwardRef<HTMLInputElement, DropZoneProps>(
   function DropZone(
-    { isDragging: isDraggingState, onDragOver, onDragLeave, onDrop, onClick, onFileSelect, accept = '.txt,.md' },
+    { isDragging: isDraggingState, onDragOver, onDragLeave, onDrop, onClick, onFileSelect, accept = '.txt,.md,.pdf' },
     ref
   ) {
     return (
@@ -47,7 +47,7 @@ export const DropZone = forwardRef<HTMLInputElement, DropZoneProps>(
           <p className={dropzoneText}>
             Drag and drop files here, or click to select
           </p>
-          <p className={dropzoneHint}>Supports TXT, MD files</p>
+          <p className={dropzoneHint}>Supports TXT, MD, PDF files</p>
         </div>
       </div>
     );

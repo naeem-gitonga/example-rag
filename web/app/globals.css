@@ -2,11 +2,11 @@
 [data-theme='light'] {
   --background: #ffffff;
   --foreground: #171717;
-  --primary: #3b82f6;
+  --primary: #232E21;
   --primary-hover: #2563eb;
-  --secondary: #6366f1;
+  --secondary: #B8B8F3;
   --accent: #8b5cf6;
-  --success: #22c55e;
+  --success: #096c2d;
   --error: #ef4444;
   --border: #e5e7eb;
   --muted: #6b7280;
@@ -15,9 +15,9 @@
 [data-theme='dark'] {
   --background: #0a0a0a;
   --foreground: #ededed;
-  --primary: #3b82f6;
-  --primary-hover: #60a5fa;
-  --secondary: #064f10;
+  --primary: #C97B84;
+  --primary-hover: #251351;
+  --secondary: #A85751;
   --accent: #a78bfa;
   --success: #4ade80;
   --error: #f87171;

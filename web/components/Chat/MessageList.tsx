@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ChatMessage } from '@shared/chat-types'
 import styles from './Chat.module.scss'
 
@@ -12,7 +12,9 @@ const {
   roleLabel,
   messageText,
   ragContext,
+  contextHeader,
   contextLabel,
+  contextCaret,
   contextList,
   contextItem,
   contextDate,
@@ -21,6 +23,7 @@ const {
   assistant,
   typingIndicator,
   streamingText,
+  expanded,
 } = styles
 
 interface MessageListProps {
@@ -40,6 +43,19 @@ function formatTime(date: Date): string {
 export function MessageList({ messages, isLoading, streamingContent }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set())
+
+  const toggleSources = (messageId: string) => {
+    setExpandedSources(prev => {
+      const next = new Set(prev)
+      if (next.has(messageId)) {
+        next.delete(messageId)
+      } else {
+        next.add(messageId)
+      }
+      return next
+    })
+  }
 
   // Only auto-scroll if user is near the bottom
   useEffect(() => {
