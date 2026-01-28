@@ -5,8 +5,27 @@ import { ChatMessage, RagContext } from '@shared/chat-types'
 import { ConnectionStatus } from '../types'
 import { useWebSocket } from './useWebSocket'
 
+const SESSION_STORAGE_KEY = 'chat_session_id'
+
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+}
+
+function getOrCreateSessionId(providedId?: string): string {
+  if (providedId) return providedId
+
+  // Check localStorage for existing session
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem(SESSION_STORAGE_KEY)
+    if (stored) return stored
+
+    // Create and store new session ID
+    const newId = generateId()
+    localStorage.setItem(SESSION_STORAGE_KEY, newId)
+    return newId
+  }
+
+  return generateId()
 }
 
 interface UseChatOptions {
@@ -23,6 +42,7 @@ interface UseChatReturn {
   sendMessage: (content: string) => void
   clearMessages: () => void
   clearError: () => void
+  sessionId: string
 }
 
 interface StreamMessage {
@@ -34,6 +54,13 @@ interface StreamMessage {
   role?: string
   rag_context?: RagContext[]
   error?: string
+  messages?: Array<{
+    message_id: string
+    role: 'user' | 'assistant'
+    content: string
+    created_at: string
+    rag_context?: RagContext[]
+  }>
 }
 
 export function useChat({ wsUrl, sessionId }: UseChatOptions): UseChatReturn {
@@ -41,8 +68,9 @@ export function useChat({ wsUrl, sessionId }: UseChatOptions): UseChatReturn {
   const [isLoading, setIsLoading] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [historyLoaded, setHistoryLoaded] = useState(false)
 
-  const currentSessionId = sessionId || generateId()
+  const currentSessionId = useRef(getOrCreateSessionId(sessionId)).current
   const streamingContextRef = useRef<RagContext[] | null>(null)
 
   // Use refs for smooth streaming updates
@@ -82,6 +110,22 @@ export function useChat({ wsUrl, sessionId }: UseChatOptions): UseChatReturn {
     }
 
     switch (data.action) {
+      case 'history':
+        // Load history messages
+        if (data.messages && data.messages.length > 0) {
+          const loadedMessages: ChatMessage[] = data.messages.map((m) => ({
+            message_id: m.message_id,
+            session_id: data.session_id || currentSessionId,
+            role: m.role,
+            content: m.content,
+            created_at: new Date(m.created_at),
+            rag_context: m.rag_context || null,
+          }))
+          setMessages(loadedMessages)
+        }
+        setHistoryLoaded(true)
+        break
+
       case 'chat_stream_start':
         // Store RAG context for later, reset streaming content
         streamingContextRef.current = data.rag_context || null
@@ -168,6 +212,17 @@ export function useChat({ wsUrl, sessionId }: UseChatOptions): UseChatReturn {
     onError: handleError,
   })
 
+  // Fetch history once when connected
+  useEffect(() => {
+    if (status === 'connected' && !historyLoaded) {
+      setHistoryLoaded(true) // Mark as loaded immediately to prevent double-send
+      send({
+        action: 'history',
+        session_id: currentSessionId,
+      })
+    }
+  }, [status, historyLoaded, currentSessionId, send])
+
   const sendMessage = useCallback((content: string) => {
     if (!content.trim()) return
 
@@ -212,5 +267,6 @@ export function useChat({ wsUrl, sessionId }: UseChatOptions): UseChatReturn {
     sendMessage,
     clearMessages,
     clearError,
+    sessionId: currentSessionId,
   }
 }

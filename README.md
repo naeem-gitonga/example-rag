@@ -157,6 +157,37 @@ Gateway (proxies SSE to WebSocket)
 Web App (displays tokens as they arrive for "typing" effect)
 ```
 
+**Detailed Chat Flow:**
+
+```
+1. Web App → Gateway: "what's the price of gold?"
+
+2. Gateway → Query Service (action: "rag"):
+   - Query Service internally:
+     - Calls Embedding Service → gets vector [0.12, -0.45, ...]
+     - Searches LanceDB with that vector → finds matching entries
+     - Saves user message to MongoDB
+   - Returns to Gateway:
+     - system_prompt: "You are a journal assistant... Relevant entries: [2026-01-27] gold is $5,220..."
+     - rag_context: [{entry_date, text_snippet, score}]
+
+3. Gateway → LLM:
+   - Sends: system_prompt + user message
+   - Receives: streaming tokens
+
+4. Gateway → Web App:
+   - Forwards each token via WebSocket
+
+5. Gateway → Query Service (action: "save_message"):
+   - Saves assistant's complete response to MongoDB
+```
+
+**Key point:** The embedding vector stays inside the Query Service. The Gateway only receives:
+- The **system prompt** (text with RAG context baked in)
+- The **rag_context metadata** (for showing "Sources" in UI)
+
+The Gateway never sees the actual vector—it just passes text to the LLM. The LLM has no knowledge of the Query Service, embeddings, or databases. It simply receives a system prompt (which happens to contain retrieved journal entries) and a user message, then generates a response.
+
 ### Services
 
 | Service | Description |
@@ -887,6 +918,133 @@ This is the core of how RAG applications work:
 ```
 
 The LLM doesn't have direct database access—it only sees what's included in the prompt. This is both a limitation (context window size) and a feature (you control exactly what the LLM knows).
+
+## Architectural Patterns
+
+### CQRS: Command Query Responsibility Segregation
+
+**Core idea:** Separate the code that **reads** data from the code that **writes** data.
+
+**Traditional approach (current implementation):**
+
+```
+┌─────────────────────────────────────┐
+│           Query Service             │
+│                                     │
+│  • searchSimilar() ← READ           │
+│  • getHistory()    ← READ           │
+│  • saveMessage()   ← WRITE          │
+│  • createSession() ← WRITE          │
+└─────────────────────────────────────┘
+```
+
+One service does everything. Simple, but responsibilities are mixed.
+
+**CQRS approach:**
+
+```
+┌─────────────────────────────────────┐      ┌─────────────────────────────────┐
+│           Query Service             │      │         Command Service         │
+│           (READ side)               │      │          (WRITE side)           │
+│                                     │      │                                 │
+│  • searchSimilar()                  │      │  • saveMessage()                │
+│  • getHistory()                     │      │  • createSession()              │
+│  • getSession()                     │      │  • updateSession()              │
+└─────────────────────────────────────┘      └─────────────────────────────────┘
+```
+
+**Terminology:**
+
+| Term | Meaning | Example |
+|------|---------|---------|
+| **Query** | Request that returns data, doesn't change state | "Get chat history" |
+| **Command** | Request that changes state, may not return data | "Save this message" |
+
+**Why separate them?**
+
+1. **Different optimization needs:**
+
+| Reads (Queries) | Writes (Commands) |
+|-----------------|-------------------|
+| Need to be FAST | Need to be RELIABLE |
+| Can use caching | Need validation |
+| Can use read replicas | Need consistency |
+| Can be eventually consistent | Often need transactions |
+
+2. **Different scaling patterns:**
+
+```
+Typical app: 90% reads, 10% writes
+
+Without CQRS:
+┌─────────┐ ┌─────────┐ ┌─────────┐
+│ Service │ │ Service │ │ Service │   ← Scale everything together
+└─────────┘ └─────────┘ └─────────┘
+
+With CQRS:
+┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐
+│ Query │ │ Query │ │ Query │ │ Query │ │ Query │   ← Scale reads heavily
+└───────┘ └───────┘ └───────┘ └───────┘ └───────┘
+              ┌─────────┐
+              │ Command │   ← Fewer write instances needed
+              └─────────┘
+```
+
+3. **Different data models:**
+
+```
+Write model (normalized):           Read model (denormalized):
+┌──────────┐  ┌──────────┐         ┌─────────────────────────────┐
+│ sessions │  │ messages │         │     chat_history_view       │
+│──────────│  │──────────│         │─────────────────────────────│
+│ id       │  │ id       │   →     │ session_id                  │
+│ title    │  │ session_id│        │ session_title               │
+│ created  │  │ content   │        │ messages[] (embedded)       │
+└──────────┘  │ role      │        │ last_message_preview        │
+              └──────────┘         └─────────────────────────────┘
+
+Optimized for integrity           Optimized for fast reads
+```
+
+**Applied to this app:**
+
+Current flow (mixed read/write):
+```
+Gateway → Query Service (rag)         ← READ (search)
+                                      ← WRITE (save user message) ❌ mixed
+Gateway → LLM (stream)
+Gateway → Query Service (save_message) ← WRITE
+```
+
+CQRS flow (separated):
+```
+Gateway → Command Service (save user message)  ← WRITE
+Gateway → Query Service (rag)                  ← READ only
+Gateway → LLM (stream)
+Gateway → Command Service (save assistant)     ← WRITE
+```
+
+**When CQRS is overkill:**
+- Small apps with low traffic
+- Simple CRUD with no complex queries
+- Team is small and doesn't need separation
+- Read/write patterns are similar
+
+**When CQRS shines:**
+- High-scale systems (millions of reads)
+- Complex domains with different read/write needs
+- Event-sourced systems
+- Microservices where teams own different concerns
+
+**Related patterns:**
+
+| Pattern | Description |
+|---------|-------------|
+| **CQRS** | Separate read/write code paths |
+| **Event Sourcing** | Store events, not state. Rebuild state from events. |
+| **CQRS + Event Sourcing** | Commands emit events, queries read from projections |
+
+**Current decision:** This app uses a mixed approach (Query Service handles both reads and writes) because the scale doesn't justify the added complexity. CQRS would be considered if scaling requirements change.
 
 ## Known Limitations
 
