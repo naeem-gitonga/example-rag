@@ -97,15 +97,24 @@ export function MessageList({ messages, isLoading, streamingContent }: MessageLi
             <p className={messageText}>{msg.content}</p>
             {msg.rag_context && msg.rag_context.length > 0 && (
               <div className={ragContext}>
-                <span className={contextLabel}>Sources:</span>
-                <ul className={contextList}>
-                  {msg.rag_context.map((ctx, idx) => (
-                    <li key={idx} className={contextItem}>
-                      <span className={contextDate}>{ctx.entry_date}</span>
-                      <span className={contextSnippet}>{ctx.text_snippet}</span>
-                    </li>
-                  ))}
-                </ul>
+                <button
+                  className={`${contextHeader} ${expandedSources.has(msg.message_id) ? expanded : ''}`}
+                  onClick={() => toggleSources(msg.message_id)}
+                  type="button"
+                >
+                  <span className={contextCaret}>&#9656;</span>
+                  <span className={contextLabel}>Sources ({msg.rag_context.length})</span>
+                </button>
+                {expandedSources.has(msg.message_id) && (
+                  <ul className={contextList}>
+                    {msg.rag_context.map((ctx, idx) => (
+                      <li key={idx} className={contextItem}>
+                        <span className={contextDate}>{ctx.entry_date}</span>
+                        <span className={contextSnippet}>{ctx.text_snippet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
             <span className={timestamp}>

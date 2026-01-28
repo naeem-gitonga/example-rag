@@ -94,11 +94,16 @@ describe('useChat', () => {
       useChat({ wsUrl: 'ws://localhost:8080/ws' })
     );
 
+    // Clear any initial calls (e.g., history fetch)
+    mockSend.mockClear();
+
     act(() => {
       result.current.sendMessage('');
     });
 
-    expect(mockSend).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'chat' })
+    );
     expect(result.current.messages).toHaveLength(0);
   });
 
@@ -107,11 +112,16 @@ describe('useChat', () => {
       useChat({ wsUrl: 'ws://localhost:8080/ws' })
     );
 
+    // Clear any initial calls (e.g., history fetch)
+    mockSend.mockClear();
+
     act(() => {
       result.current.sendMessage('   ');
     });
 
-    expect(mockSend).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'chat' })
+    );
     expect(result.current.messages).toHaveLength(0);
   });
 

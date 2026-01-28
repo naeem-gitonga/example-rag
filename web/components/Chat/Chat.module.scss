@@ -212,16 +212,40 @@
   border-top: 1px solid var(--border);
 }
 
+.contextHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  margin-bottom: 0;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &.expanded .contextCaret {
+    transform: rotate(90deg);
+  }
+}
+
+.contextCaret {
+  font-size: 0.7rem;
+  color: var(--muted);
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
 .contextLabel {
-  display: block;
   font-size: 0.7rem;
   font-weight: 600;
   color: var(--muted);
-  margin-bottom: 6px;
 }
 
 .contextList {
-  margin: 0;
+  margin: 6px 0 0 0;
   padding: 0;
   list-style: none;
 }
@@ -363,3 +387,6 @@
     transform: translateY(-4px);
   }
 }
+
+// Utility class for expanded state
+.expanded {}
