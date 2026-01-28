@@ -25,7 +25,7 @@ describe('api', () => {
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8002',
+        '/api/ingest',
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -35,9 +35,11 @@ describe('api', () => {
       const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(callBody).toEqual({
         action: 'ingest',
-        entry_date: '2024-01-15',
-        text: 'Test entry text',
-        moods: ['happy', 'calm'],
+        body: {
+          entry_date: '2024-01-15',
+          text: 'Test entry text',
+          moods: ['happy', 'calm'],
+        },
       });
     });
 
@@ -50,7 +52,7 @@ describe('api', () => {
       await submitEntry({ ...defaultParams, entryId: 'my-file.txt' });
 
       const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
-      expect(callBody.entry_id).toBe('my-file.txt');
+      expect(callBody.body.entry_id).toBe('my-file.txt');
     });
 
     it('should not include entry_id when not provided', async () => {
@@ -62,7 +64,7 @@ describe('api', () => {
       await submitEntry(defaultParams);
 
       const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
-      expect(callBody).not.toHaveProperty('entry_id');
+      expect(callBody.body).not.toHaveProperty('entry_id');
     });
 
     it('should return success response', async () => {
@@ -128,10 +130,12 @@ describe('api', () => {
       const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(callBody).toEqual({
         action: 'ingest',
-        entry_date: '2024-01-15',
-        text: 'File content here',
-        moods: ['happy'],
-        entry_id: 'test.txt',
+        body: {
+          entry_date: '2024-01-15',
+          text: 'File content here',
+          moods: ['happy'],
+          entry_id: 'test.txt',
+        },
       });
     });
 
@@ -148,7 +152,7 @@ describe('api', () => {
       await submitFileContent(file, '2024-01-15', []);
 
       const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
-      expect(callBody.entry_id).toBe('my-document.md');
+      expect(callBody.body.entry_id).toBe('my-document.md');
     });
   });
 });

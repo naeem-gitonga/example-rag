@@ -23,7 +23,7 @@ jest.unstable_mockModule("@shared/config", () => ({
 const { getTable } = await import("@shared/db/connection");
 const { searchSimilar } = await import("@shared/db/operations");
 const { getEmbedding } = await import("@shared/services/embedding");
-const { search } = await import("./query.service");
+const { search } = await import("../query.service");
 
 const mockGetTable = getTable as jest.MockedFunction<typeof getTable>;
 const mockSearchSimilar = searchSimilar as jest.MockedFunction<typeof searchSimilar>;

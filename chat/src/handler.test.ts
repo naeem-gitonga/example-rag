@@ -10,11 +10,21 @@ jest.unstable_mockModule("./services/query.service", () => ({
   search: jest.fn<any>(),
 }));
 
+jest.unstable_mockModule("./services/chat.service", () => ({
+  rag: jest.fn<any>(),
+  saveMessage: jest.fn<any>(),
+  getHistory: jest.fn<any>(),
+}));
+
 // Dynamic imports after mocking
 const { search } = await import("./services/query.service");
+const { rag, saveMessage, getHistory } = await import("./services/chat.service");
 const { handler } = await import("./handler");
 
 const mockSearch = search as jest.MockedFunction<typeof search>;
+const mockRag = rag as jest.MockedFunction<typeof rag>;
+const mockSaveMessage = saveMessage as jest.MockedFunction<typeof saveMessage>;
+const mockGetHistory = getHistory as jest.MockedFunction<typeof getHistory>;
 
 describe("handler", () => {
   beforeEach(() => {
@@ -22,6 +32,18 @@ describe("handler", () => {
     mockSearch.mockResolvedValue({
       statusCode: 200,
       body: JSON.stringify({ results: [] }),
+    });
+    mockRag.mockResolvedValue({
+      statusCode: 200,
+      body: JSON.stringify({ action: "rag", rag_context: [] }),
+    });
+    mockSaveMessage.mockResolvedValue({
+      statusCode: 200,
+      body: JSON.stringify({ action: "save_message", message_id: "msg-123" }),
+    });
+    mockGetHistory.mockResolvedValue({
+      statusCode: 200,
+      body: JSON.stringify({ action: "history", messages: [] }),
     });
   });
 
@@ -85,8 +107,64 @@ describe("handler", () => {
       expect(result.statusCode).toBe(200);
       expect(JSON.parse(result.body)).toEqual({
         status: "ok",
-        service: "query",
+        service: "chat",
       });
+    });
+
+    it("should route to rag when action is 'rag'", async () => {
+      const event = {
+        action: "rag",
+        body: {
+          message: "What happened yesterday?",
+          sessionId: "session-123",
+        },
+      };
+
+      const result = await handler(event as any);
+
+      expect(mockRag).toHaveBeenCalledWith({
+        message: "What happened yesterday?",
+        sessionId: "session-123",
+      });
+      expect(result.statusCode).toBe(200);
+    });
+
+    it("should route to saveMessage when action is 'save_message'", async () => {
+      const event = {
+        action: "save_message",
+        body: {
+          sessionId: "session-123",
+          content: "Assistant response",
+          ragContext: [],
+        },
+      };
+
+      const result = await handler(event as any);
+
+      expect(mockSaveMessage).toHaveBeenCalledWith({
+        sessionId: "session-123",
+        content: "Assistant response",
+        ragContext: [],
+      });
+      expect(result.statusCode).toBe(200);
+    });
+
+    it("should route to getHistory when action is 'history'", async () => {
+      const event = {
+        action: "history",
+        body: {
+          sessionId: "session-123",
+          limit: 50,
+        },
+      };
+
+      const result = await handler(event as any);
+
+      expect(mockGetHistory).toHaveBeenCalledWith({
+        sessionId: "session-123",
+        limit: 50,
+      });
+      expect(result.statusCode).toBe(200);
     });
 
     it("should return 400 for invalid action", async () => {
@@ -99,7 +177,7 @@ describe("handler", () => {
 
       expect(result.statusCode).toBe(400);
       expect(JSON.parse(result.body)).toEqual({
-        error: "Invalid action. Use: query, health",
+        error: "Invalid action. Use: query, rag, save_message, history, health",
       });
     });
 
@@ -112,7 +190,7 @@ describe("handler", () => {
 
       expect(result.statusCode).toBe(400);
       expect(JSON.parse(result.body)).toEqual({
-        error: "Invalid action. Use: query, health",
+        error: "Invalid action. Use: query, rag, save_message, history, health",
       });
     });
   });

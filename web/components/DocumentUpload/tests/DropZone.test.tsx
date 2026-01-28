@@ -30,7 +30,7 @@ describe('DropZone', () => {
     render(<DropZone {...defaultProps} />);
 
     expect(screen.getByText('Drag and drop files here, or click to select')).toBeInTheDocument();
-    expect(screen.getByText('Supports TXT, MD files')).toBeInTheDocument();
+    expect(screen.getByText('Supports TXT, MD, PDF files')).toBeInTheDocument();
   });
 
   it('should call onClick when clicked', () => {
@@ -94,7 +94,7 @@ describe('DropZone', () => {
     render(<DropZone {...defaultProps} />);
 
     const input = document.querySelector('input[type="file"]');
-    expect(input).toHaveAttribute('accept', '.txt,.md');
+    expect(input).toHaveAttribute('accept', '.txt,.md,.pdf');
   });
 
   it('should accept custom file types', () => {

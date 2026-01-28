@@ -1,6 +1,6 @@
 import { APIGatewayProxyResult } from "aws-lambda";
-import { ingest } from "./services/ingestion.service";
-import { IngestEvent, IngestBody } from "@shared/types";
+import { ingest, ingestPdf } from "./services/ingestion.service";
+import { IngestEvent, IngestBody, IngestPdfBody } from "@shared/types";
 import { initConnection } from "@shared/db/connection";
 
 // Initialize database connection on cold start
@@ -18,13 +18,16 @@ export const handler = async (event: IngestEvent): Promise<APIGatewayProxyResult
   await dbConnectionPromise;
 
   try {
-    const body: IngestBody =
+    const body: IngestBody | IngestPdfBody =
       typeof event.body === "string" ? JSON.parse(event.body) : event.body || {};
     const action = event.action || body.action;
 
     switch (action) {
       case "ingest":
-        return await ingest(body);
+        return await ingest(body as IngestBody);
+
+      case "ingest_pdf":
+        return await ingestPdf(body as IngestPdfBody);
 
       case "health":
         return {
@@ -35,7 +38,7 @@ export const handler = async (event: IngestEvent): Promise<APIGatewayProxyResult
       default:
         return {
           statusCode: 400,
-          body: JSON.stringify({ error: "Invalid action. Use: ingest, health" }),
+          body: JSON.stringify({ error: "Invalid action. Use: ingest, ingest_pdf, health" }),
         };
     }
   } catch (error) {

@@ -42,11 +42,57 @@ export async function submitEntry(params: SubmitEntryParams): Promise<ApiRespons
   return { success: true };
 }
 
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Remove data URL prefix (e.g., "data:application/pdf;base64,")
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export async function submitFileContent(
   file: File,
   entryDate: string,
   moods: string[]
 ): Promise<ApiResponse> {
+  const isPdf = file.name.toLowerCase().endsWith('.pdf');
+
+  if (isPdf) {
+    const pdfBase64 = await fileToBase64(file);
+    const payload = {
+      action: 'ingest_pdf',
+      body: {
+        entry_date: entryDate,
+        pdf_base64: pdfBase64,
+        moods,
+        entry_id: file.name,
+        filename: file.name,
+      },
+    };
+
+    const response = await fetch(INGESTION_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `PDF upload failed: ${response.statusText}`);
+    }
+
+    return { success: true };
+  }
+
+  // Text files (.txt, .md)
   const text = await file.text();
   return submitEntry({
     entryDate,

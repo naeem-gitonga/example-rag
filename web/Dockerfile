@@ -1,11 +1,12 @@
 # Production Dockerfile
+# Build context should be project root to access shared/
 
 # Stage 1: Dependencies
 FROM node:22-alpine AS deps
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY web/package.json web/package-lock.json* ./
 RUN npm ci
 
 # Stage 2: Build
@@ -14,7 +15,8 @@ FROM node:22-alpine AS build
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY web/ .
+COPY shared/ /shared/
 
 ARG NEXT_PUBLIC_INGESTION_API_URL
 ENV NEXT_PUBLIC_INGESTION_API_URL=${NEXT_PUBLIC_INGESTION_API_URL}

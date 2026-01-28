@@ -7,12 +7,12 @@ interface LambdaConfig {
 
 const lambdaConfigs: Record<string, LambdaConfig> = {
   ingestion: {
-    functionName: "ingestion",
+    functionName: process.env.INGESTION_FUNCTION_NAME || "function",
     endpoint: process.env.INGESTION_LAMBDA_ENDPOINT || "http://localhost:8002",
   },
-  query: {
-    functionName: "query",
-    endpoint: process.env.QUERY_LAMBDA_ENDPOINT || "http://localhost:8003",
+  chat: {
+    functionName: process.env.CHAT_FUNCTION_NAME || "function",
+    endpoint: process.env.CHAT_LAMBDA_ENDPOINT || "http://localhost:8003",
   },
 };
 
@@ -37,7 +37,7 @@ function getClient(service: string): LambdaClient {
 }
 
 export async function invokeLambda(
-  service: "ingestion" | "query",
+  service: "ingestion" | "chat",
   payload: Record<string, unknown>
 ): Promise<Record<string, unknown>> {
   const client = getClient(service);

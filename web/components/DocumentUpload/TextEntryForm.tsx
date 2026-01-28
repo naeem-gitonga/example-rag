@@ -6,6 +6,15 @@ import { DateInput } from './DateInput';
 import { StatusMessage } from './StatusMessage';
 import styles from './DocumentUpload.module.scss';
 
+const {
+  textEntryForm,
+  formGroup,
+  label,
+  textArea,
+  formActions,
+  primaryButton,
+} = styles;
+
 export function TextEntryForm() {
   const {
     entryText,
@@ -20,27 +29,27 @@ export function TextEntryForm() {
   } = useTextEntry();
 
   return (
-    <div className={styles.textEntryForm}>
+    <div className={textEntryForm}>
       <DateInput value={entryDate} onChange={setEntryDate} />
 
       <MoodSelector selectedMoods={selectedMoods} onToggle={toggleMood} />
 
-      <div className={styles.formGroup}>
-        <label className={styles.label}>Entry Text</label>
+      <div className={formGroup}>
+        <label className={label}>Entry Text</label>
         <textarea
           value={entryText}
           onChange={(e) => setEntryText(e.target.value)}
-          className={styles.textArea}
+          className={textArea}
           placeholder="Write your journal entry here..."
           rows={8}
         />
       </div>
 
-      <div className={styles.formActions}>
+      <div className={formActions}>
         <button
           onClick={submit}
           disabled={!canSubmit}
-          className={styles.primaryButton}
+          className={primaryButton}
         >
           Save Entry
         </button>

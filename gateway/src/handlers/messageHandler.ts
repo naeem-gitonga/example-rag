@@ -1,5 +1,6 @@
 import WebSocket from "ws";
 import { invokeLambda } from "../services/lambdaClient.js";
+import { streamChatCompletion, type ChatMessage as LLMChatMessage } from "../services/llmClient.js";
 
 interface IngestMessage {
   action: "ingest";
@@ -18,10 +19,36 @@ interface QueryMessage {
 
 interface HealthMessage {
   action: "health";
-  service?: "ingestion" | "query";
+  service?: "ingestion" | "chat" | "llm";
 }
 
-type ClientMessage = IngestMessage | QueryMessage | HealthMessage;
+interface ChatMessage {
+  action: "chat";
+  content: string;
+  session_id?: string;
+}
+
+interface HistoryMessage {
+  action: "history";
+  session_id: string;
+  limit?: number;
+}
+
+type ClientMessage = IngestMessage | QueryMessage | HealthMessage | ChatMessage | HistoryMessage;
+
+interface RagContext {
+  entry_id: string;
+  entry_date: string;
+  text_snippet: string;
+  score: number;
+}
+
+interface RagResponse {
+  session_id: string;
+  user_message_id: string;
+  system_prompt: string;
+  rag_context: RagContext[];
+}
 
 function isValidMessage(data: unknown): data is ClientMessage {
   if (typeof data !== "object" || data === null) return false;
@@ -65,6 +92,14 @@ export async function handleMessage(
         await handleHealth(socket, message);
         break;
 
+      case "chat":
+        await handleChat(socket, sessionId, message);
+        break;
+
+      case "history":
+        await handleHistory(socket, message);
+        break;
+
       default:
         sendError(socket, `Unknown action: ${(message as { action: string }).action}`);
     }
@@ -90,7 +125,7 @@ async function handleIngest(socket: WebSocket, message: IngestMessage): Promise<
 }
 
 async function handleQuery(socket: WebSocket, message: QueryMessage): Promise<void> {
-  const response = await invokeLambda("query", {
+  const response = await invokeLambda("chat", {
     action: "query",
     body: {
       query: message.query,
@@ -103,8 +138,113 @@ async function handleQuery(socket: WebSocket, message: QueryMessage): Promise<vo
 
 async function handleHealth(socket: WebSocket, message: HealthMessage): Promise<void> {
   const service = message.service ?? "ingestion";
+
+  if (service === "llm") {
+    try {
+      const { checkHealth } = await import("../services/llmClient.js");
+      const health = await checkHealth();
+      sendResponse(socket, "health", { service: "llm", statusCode: 200, data: health });
+    } catch (error) {
+      sendResponse(socket, "health", {
+        service: "llm",
+        statusCode: 503,
+        data: { error: error instanceof Error ? error.message : "LLM service unavailable" },
+      });
+    }
+    return;
+  }
+
   const response = await invokeLambda(service, { action: "health" });
   sendResponse(socket, "health", { service, ...response });
+}
+
+async function handleChat(socket: WebSocket, sessionId: string, message: ChatMessage): Promise<void> {
+  const chatSessionId = message.session_id ?? sessionId;
+
+  // Step 1: Get RAG context from chat service (also saves user message)
+  const ragResponse = await invokeLambda("chat", {
+    action: "rag",
+    body: {
+      message: message.content,
+      sessionId: chatSessionId,
+    },
+  });
+
+  const ragData = ragResponse.data as RagResponse;
+  const ragContext = ragData.rag_context || [];
+  const systemPrompt = ragData.system_prompt;
+
+  console.log(`[chat] RAG context: ${ragContext.length} entries`, ragContext.map(c => c.entry_date));
+
+  // Step 2: Send stream start event
+  sendResponse(socket, "chat_stream_start", {
+    session_id: chatSessionId,
+    rag_context: ragContext,
+  });
+
+  // Step 3: Stream LLM response
+  const llmMessages: LLMChatMessage[] = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: message.content },
+  ];
+
+  let fullContent = "";
+
+  try {
+    let tokenCount = 0;
+    for await (const token of streamChatCompletion({ messages: llmMessages })) {
+      fullContent += token;
+      tokenCount++;
+
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(
+          JSON.stringify({
+            action: "chat_stream_token",
+            token,
+            session_id: chatSessionId,
+          })
+        );
+      }
+    }
+    console.log(`[chat] Streamed ${tokenCount} tokens`);
+
+    // Step 4: Save assistant message to MongoDB
+    await invokeLambda("chat", {
+      action: "save_message",
+      body: {
+        sessionId: chatSessionId,
+        content: fullContent,
+        ragContext,
+      },
+    });
+
+    // Step 5: Send stream end event
+    console.log(`[chat] Sending stream end with ${ragContext.length} sources`);
+    sendResponse(socket, "chat_stream_end", {
+      session_id: chatSessionId,
+      content: fullContent,
+      role: "assistant",
+      rag_context: ragContext,
+    });
+  } catch (error) {
+    sendResponse(socket, "chat_stream_error", {
+      session_id: chatSessionId,
+      error: error instanceof Error ? error.message : "Stream error",
+      partial_content: fullContent,
+    });
+  }
+}
+
+async function handleHistory(socket: WebSocket, message: HistoryMessage): Promise<void> {
+  const response = await invokeLambda("chat", {
+    action: "history",
+    body: {
+      sessionId: message.session_id,
+      limit: message.limit,
+    },
+  });
+
+  sendResponse(socket, "history", response.data);
 }
 
 function sendResponse(socket: WebSocket, action: string, data: unknown): void {
@@ -115,6 +255,6 @@ function sendResponse(socket: WebSocket, action: string, data: unknown): void {
 
 function sendError(socket: WebSocket, error: string): void {
   if (socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify({ error }));
+    socket.send(JSON.stringify({ action: "error", error }));
   }
 }

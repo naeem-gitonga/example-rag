@@ -8,27 +8,40 @@ import { FileUploadForm } from './FileUploadForm';
 import { InputMode } from './types';
 import styles from './DocumentUpload.module.scss';
 
+const {
+  container,
+  header,
+  logo,
+  nav,
+  navLink,
+  navLinkActive,
+  main,
+  modeToggle,
+  modeButton,
+  active,
+} = styles;
+
 export default function DocumentUpload() {
   const [inputMode, setInputMode] = useState<InputMode>('text');
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <Link href="/" className={styles.logo}>
+    <div className={container}>
+      <header className={header}>
+        <Link href="/" className={logo}>
           RAG Chat
         </Link>
-        <nav className={styles.nav}>
-          <Link href="/chat" className={styles.navLink}>
+        <nav className={nav}>
+          <Link href="/chat" className={navLink}>
             Chat
           </Link>
-          <Link href="/upload" className={styles.navLinkActive}>
+          <Link href="/upload" className={navLinkActive}>
             Add Knowledge
           </Link>
           <ThemeToggle />
         </nav>
       </header>
 
-      <main className={styles.main}>
+      <main className={main}>
         <ModeToggle mode={inputMode} onChange={setInputMode} />
         {inputMode === 'text' ? <TextEntryForm /> : <FileUploadForm />}
       </main>
@@ -43,15 +56,15 @@ interface ModeToggleProps {
 
 function ModeToggle({ mode, onChange }: ModeToggleProps) {
   return (
-    <div className={styles.modeToggle}>
+    <div className={modeToggle}>
       <button
-        className={`${styles.modeButton} ${mode === 'text' ? styles.active : ''}`}
+        className={`${modeButton} ${mode === 'text' ? active : ''}`}
         onClick={() => onChange('text')}
       >
         Write Entry
       </button>
       <button
-        className={`${styles.modeButton} ${mode === 'file' ? styles.active : ''}`}
+        className={`${modeButton} ${mode === 'file' ? active : ''}`}
         onClick={() => onChange('file')}
       >
         Upload File

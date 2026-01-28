@@ -6,15 +6,17 @@ jest.unstable_mockModule("@shared/db/connection", () => ({
   getTable: jest.fn<any>(),
 }));
 
-jest.unstable_mockModule("./services/ingestion.service", () => ({
+jest.unstable_mockModule("../services/ingestion.service", () => ({
   ingest: jest.fn<any>(),
+  ingestPdf: jest.fn<any>(),
 }));
 
 // Dynamic imports after mocking
-const { ingest } = await import("./services/ingestion.service");
-const { handler } = await import("./handler");
+const { ingest, ingestPdf } = await import("../services/ingestion.service");
+const { handler } = await import("../handler");
 
 const mockIngest = ingest as jest.MockedFunction<typeof ingest>;
+const mockIngestPdf = ingestPdf as jest.MockedFunction<typeof ingestPdf>;
 
 describe("handler", () => {
   beforeEach(() => {
@@ -22,6 +24,10 @@ describe("handler", () => {
     mockIngest.mockResolvedValue({
       statusCode: 200,
       body: JSON.stringify({ id: "test-id", message: "Entry ingested successfully" }),
+    });
+    mockIngestPdf.mockResolvedValue({
+      statusCode: 200,
+      body: JSON.stringify({ id: "pdf-id", message: "PDF ingested successfully", pages: 2, characters: 500 }),
     });
   });
 
@@ -97,6 +103,28 @@ describe("handler", () => {
       });
     });
 
+    it("should route to ingestPdf when action is 'ingest_pdf'", async () => {
+      const event = {
+        action: "ingest_pdf",
+        body: {
+          entry_date: "2024-01-15",
+          pdf_base64: "JVBERi0xLjQ=",
+          moods: ["focused"],
+          filename: "document.pdf",
+        },
+      };
+
+      const result = await handler(event as any);
+
+      expect(mockIngestPdf).toHaveBeenCalledWith({
+        entry_date: "2024-01-15",
+        pdf_base64: "JVBERi0xLjQ=",
+        moods: ["focused"],
+        filename: "document.pdf",
+      });
+      expect(result.statusCode).toBe(200);
+    });
+
     it("should return 400 for invalid action", async () => {
       const event = {
         action: "unknown",
@@ -107,7 +135,7 @@ describe("handler", () => {
 
       expect(result.statusCode).toBe(400);
       expect(JSON.parse(result.body)).toEqual({
-        error: "Invalid action. Use: ingest, health",
+        error: "Invalid action. Use: ingest, ingest_pdf, health",
       });
     });
 
@@ -120,7 +148,7 @@ describe("handler", () => {
 
       expect(result.statusCode).toBe(400);
       expect(JSON.parse(result.body)).toEqual({
-        error: "Invalid action. Use: ingest, health",
+        error: "Invalid action. Use: ingest, ingest_pdf, health",
       });
     });
   });
