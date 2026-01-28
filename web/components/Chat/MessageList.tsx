@@ -76,7 +76,7 @@ export function MessageList({ messages, isLoading, streamingContent }: MessageLi
         >
           <div className={messageContent}>
             <span className={roleLabel}>
-              {msg.role === 'user' ? 'You' : 'Assistant'}
+              {msg.role === 'user' ? 'Me' : 'Assistant'}
             </span>
             <p className={messageText}>{msg.content}</p>
             {msg.rag_context && msg.rag_context.length > 0 && (

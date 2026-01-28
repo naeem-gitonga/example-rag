@@ -19,7 +19,7 @@ interface QueryMessage {
 
 interface HealthMessage {
   action: "health";
-  service?: "ingestion" | "query" | "llm";
+  service?: "ingestion" | "chat" | "llm";
 }
 
 interface ChatMessage {
@@ -125,7 +125,7 @@ async function handleIngest(socket: WebSocket, message: IngestMessage): Promise<
 }
 
 async function handleQuery(socket: WebSocket, message: QueryMessage): Promise<void> {
-  const response = await invokeLambda("query", {
+  const response = await invokeLambda("chat", {
     action: "query",
     body: {
       query: message.query,
@@ -161,8 +161,8 @@ async function handleHealth(socket: WebSocket, message: HealthMessage): Promise<
 async function handleChat(socket: WebSocket, sessionId: string, message: ChatMessage): Promise<void> {
   const chatSessionId = message.session_id ?? sessionId;
 
-  // Step 1: Get RAG context from query service (also saves user message)
-  const ragResponse = await invokeLambda("query", {
+  // Step 1: Get RAG context from chat service (also saves user message)
+  const ragResponse = await invokeLambda("chat", {
     action: "rag",
     body: {
       message: message.content,
@@ -207,7 +207,7 @@ async function handleChat(socket: WebSocket, sessionId: string, message: ChatMes
     console.log(`[chat] Streamed ${tokenCount} tokens`);
 
     // Step 4: Save assistant message to MongoDB
-    await invokeLambda("query", {
+    await invokeLambda("chat", {
       action: "save_message",
       body: {
         sessionId: chatSessionId,
@@ -233,7 +233,7 @@ async function handleChat(socket: WebSocket, sessionId: string, message: ChatMes
 }
 
 async function handleHistory(socket: WebSocket, message: HistoryMessage): Promise<void> {
-  const response = await invokeLambda("query", {
+  const response = await invokeLambda("chat", {
     action: "history",
     body: {
       sessionId: message.session_id,

@@ -18,7 +18,7 @@ A Retrieval-Augmented Generation (RAG) system for journal entries using LanceDB 
          │ AWS SDK (Lambda Invoke)
          ▼
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Ingestion     │     │     Query       │     │    Embedding    │
+│   Ingestion     │     │      Chat       │     │    Embedding    │
 │   (Lambda)      │     │    (Lambda)     │     │    (Python)     │
 └────────┬────────┘     └────────┬────────┘     └────────┬────────┘
          │                       │                       │
@@ -90,7 +90,7 @@ Gateway
     │  AWS SDK Lambda Invoke
     │
     ▼
-Query Service (Lambda)
+Chat Service (Lambda)
     │
     ├──► Embedding Service (get vector for query)
     │         │
@@ -123,7 +123,7 @@ Gateway
     │  AWS SDK Lambda Invoke
     │
     ▼
-Query Service (Lambda)
+Chat Service (Lambda)
     │
     ├──► Embedding Service (get vector for user message)
     │         │
@@ -162,8 +162,8 @@ Web App (displays tokens as they arrive for "typing" effect)
 ```
 1. Web App → Gateway: "what's the price of gold?"
 
-2. Gateway → Query Service (action: "rag"):
-   - Query Service internally:
+2. Gateway → Chat Service (action: "rag"):
+   - Chat Service internally:
      - Calls Embedding Service → gets vector [0.12, -0.45, ...]
      - Searches LanceDB with that vector → finds matching entries
      - Saves user message to MongoDB
@@ -178,15 +178,15 @@ Web App (displays tokens as they arrive for "typing" effect)
 4. Gateway → Web App:
    - Forwards each token via WebSocket
 
-5. Gateway → Query Service (action: "save_message"):
+5. Gateway → Chat Service (action: "save_message"):
    - Saves assistant's complete response to MongoDB
 ```
 
-**Key point:** The embedding vector stays inside the Query Service. The Gateway only receives:
+**Key point:** The embedding vector stays inside the Chat Service. The Gateway only receives:
 - The **system prompt** (text with RAG context baked in)
 - The **rag_context metadata** (for showing "Sources" in UI)
 
-The Gateway never sees the actual vector—it just passes text to the LLM. The LLM has no knowledge of the Query Service, embeddings, or databases. It simply receives a system prompt (which happens to contain retrieved journal entries) and a user message, then generates a response.
+The Gateway never sees the actual vector—it just passes text to the LLM. The LLM has no knowledge of the Chat Service, embeddings, or databases. It simply receives a system prompt (which happens to contain retrieved journal entries) and a user message, then generates a response.
 
 ### Services
 
@@ -195,7 +195,7 @@ The Gateway never sees the actual vector—it just passes text to the LLM. The L
 | **web** | Next.js frontend for chat and document upload |
 | **gateway** | WebSocket server that invokes Lambda functions via AWS SDK |
 | **ingestion** | TypeScript Lambda for adding journal entries to the database |
-| **query** | TypeScript Lambda for semantic search over journal entries |
+| **chat** | TypeScript Lambda for semantic search over journal entries |
 | **embedding** | Python service using sentence-transformers for vector generation |
 | **llm** | Python service using Qwen2.5-3B-Instruct for chat completions (SSE streaming) |
 | **minio** | S3-compatible object storage (mimics AWS S3 locally) |
@@ -546,7 +546,7 @@ new LambdaClient({ region: "us-east-1" }) // Uses real Lambda
 **How SSE→WebSocket proxy works:**
 
 1. Client sends `{ action: "chat", content: "...", stream: true }` over WebSocket
-2. Gateway fetches RAG context from Query service
+2. Gateway fetches RAG context from Chat service
 3. Gateway calls LLM service with `stream: true`, receives SSE response
 4. Gateway consumes SSE events and forwards each token to WebSocket:
    ```
@@ -628,8 +628,8 @@ cd shared && npm test
 # Ingestion service
 cd ingestion && npm test
 
-# Query service
-cd query && npm test
+# Chat service
+cd chat && npm test
 
 # Gateway service
 cd gateway && npm test
@@ -657,7 +657,7 @@ cd web && npm test
 # Install dependencies
 cd shared && npm install
 cd ../ingestion && npm install
-cd ../query && npm install
+cd ../chat && npm install
 
 # Start services
 docker-compose up
@@ -696,9 +696,9 @@ docker compose up -d
 | `MONGO_URI` | `mongodb://root:example@mongo:27017` | MongoDB connection string |
 | `MONGO_DB_NAME` | `example_rag` | MongoDB database name |
 | `INGESTION_FUNCTION_NAME` | `function` | Lambda function name for ingestion (use actual name in prod) |
-| `QUERY_FUNCTION_NAME` | `function` | Lambda function name for query (use actual name in prod) |
+| `CHAT_FUNCTION_NAME` | `function` | Lambda function name for chat (use actual name in prod) |
 | `INGESTION_LAMBDA_ENDPOINT` | `http://localhost:8002` | Ingestion Lambda endpoint (omit in prod for real AWS) |
-| `QUERY_LAMBDA_ENDPOINT` | `http://localhost:8003` | Query Lambda endpoint (omit in prod for real AWS) |
+| `CHAT_LAMBDA_ENDPOINT` | `http://localhost:8003` | Chat Lambda endpoint (omit in prod for real AWS) |
 | `LLM_SERVICE_URL` | `http://localhost:8004` | LLM service URL for chat completions |
 | `NEXT_PUBLIC_WS_URL` | `ws://localhost:8080/ws` | WebSocket gateway URL (web app) |
 
@@ -725,7 +725,7 @@ docker compose up -d
 }
 ```
 
-### Query Service
+### Chat Service
 
 **Search:**
 ```json
@@ -733,6 +733,29 @@ docker compose up -d
   "action": "query",
   "query": "How was my day?",
   "limit": 5
+}
+```
+
+**RAG Context:**
+```json
+{
+  "action": "rag",
+  "body": {
+    "message": "What did I do yesterday?",
+    "sessionId": "session-uuid"
+  }
+}
+```
+
+**Save Message:**
+```json
+{
+  "action": "save_message",
+  "body": {
+    "sessionId": "session-uuid",
+    "content": "Assistant response...",
+    "ragContext": [...]
+  }
 }
 ```
 
@@ -802,7 +825,7 @@ The vectors are *related* but not *close*. Distance might be 0.9-1.0 even though
 
 The RAG search uses a similarity score threshold to filter out irrelevant results. This prevents the system from returning unrelated journal entries when the user's query doesn't match any content.
 
-**Configuration** (`shared/src/db/operations.ts`):
+**Configuration** (`shared/src/db/operations.ts` called by `chat/src/services/chat.service.ts`):
 ```typescript
 searchSimilar(table, queryVector, limit, maxDistance = 1.2)
 ```
@@ -836,7 +859,7 @@ Without a threshold, vector search always returns the top N results regardless o
 
 The **system prompt** is the instruction set that tells the LLM who it is, how to behave, and what context it has available. It's the primary mechanism for customizing LLM behavior without retraining the model.
 
-**Location:** `query/src/services/chat.service.ts` → `buildSystemPrompt()`
+**Location:** `chat/src/services/chat.service.ts` → `buildSystemPrompt()`
 
 **Structure:**
 
@@ -929,7 +952,7 @@ The LLM doesn't have direct database access—it only sees what's included in th
 
 ```
 ┌─────────────────────────────────────┐
-│           Query Service             │
+│           Chat Service             │
 │                                     │
 │  • searchSimilar() ← READ           │
 │  • getHistory()    ← READ           │
@@ -944,7 +967,7 @@ One service does everything. Simple, but responsibilities are mixed.
 
 ```
 ┌─────────────────────────────────────┐      ┌─────────────────────────────────┐
-│           Query Service             │      │         Command Service         │
+│           Chat Service             │      │         Command Service         │
 │           (READ side)               │      │          (WRITE side)           │
 │                                     │      │                                 │
 │  • searchSimilar()                  │      │  • saveMessage()                │
@@ -1010,16 +1033,16 @@ Optimized for integrity           Optimized for fast reads
 
 Current flow (mixed read/write):
 ```
-Gateway → Query Service (rag)         ← READ (search)
+Gateway → Chat Service (rag)         ← READ (search)
                                       ← WRITE (save user message) ❌ mixed
 Gateway → LLM (stream)
-Gateway → Query Service (save_message) ← WRITE
+Gateway → Chat Service (save_message) ← WRITE
 ```
 
 CQRS flow (separated):
 ```
 Gateway → Command Service (save user message)  ← WRITE
-Gateway → Query Service (rag)                  ← READ only
+Gateway → Chat Service (rag)                  ← READ only
 Gateway → LLM (stream)
 Gateway → Command Service (save assistant)     ← WRITE
 ```
@@ -1044,7 +1067,7 @@ Gateway → Command Service (save assistant)     ← WRITE
 | **Event Sourcing** | Store events, not state. Rebuild state from events. |
 | **CQRS + Event Sourcing** | Commands emit events, queries read from projections |
 
-**Current decision:** This app uses a mixed approach (Query Service handles both reads and writes) because the scale doesn't justify the added complexity. CQRS would be considered if scaling requirements change.
+**Current decision:** This app uses a mixed approach (Chat Service handles both reads and writes) because the scale doesn't justify the added complexity. CQRS would be considered if scaling requirements change.
 
 ## Known Limitations
 
@@ -1084,24 +1107,24 @@ Gateway → Command Service (save assistant)     ← WRITE
 
 ### Session: Chat Action Implementation (2026-01-27)
 
-This session implemented the Gateway and Query service chat action, connecting the existing web app chat UI to the backend.
+This session implemented the Gateway and Chat service chat action, connecting the existing web app chat UI to the backend.
 
 #### Changes Made
 
 **1. Gateway Chat Action** (`gateway/src/handlers/messageHandler.ts`)
 - Added `ChatMessage` interface with `content` and `session_id` fields
 - Added `"chat"` case to the message handler switch statement
-- Created `handleChat()` function that forwards messages to the query service
+- Created `handleChat()` function that forwards messages to the chat service
 
-**2. Query Service Chat Handler** (`query/src/services/chat.service.ts`)
+**2. Chat Service Chat Handler** (`chat/src/services/chat.service.ts`)
 - New file implementing chat logic with RAG search
 - Performs vector similarity search on user message
 - Returns RAG context with placeholder response (LLM integration pending)
 - Added `ChatBody` type to shared types
 
 **3. Lambda Client Fix** (`gateway/src/services/lambdaClient.ts`)
-- Changed `functionName` from service names (`"ingestion"`, `"query"`) to `"function"`
-- **Problem**: AWS Lambda RIE expects `/2015-03-31/functions/function/invocations` path, but the SDK was generating `/2015-03-31/functions/query/invocations` based on the function name
+- Changed `functionName` from service names (`"ingestion"`, `"chat"`) to `"function"`
+- **Problem**: AWS Lambda RIE expects `/2015-03-31/functions/function/invocations` path, but the SDK was generating `/2015-03-31/functions/chat/invocations` based on the function name
 - **Symptom**: 404 errors with "Unexpected non-whitespace character after JSON" (HTML error page being parsed as JSON)
 
 **4. WebSocket URL Configuration** (`docker-compose.yml`, `web/.env.local`)
@@ -1130,7 +1153,7 @@ This session implemented the Gateway and Query service chat action, connecting t
 
 #### Architecture Decisions
 
-**Why route chat through Query service (not a new Chat service)?**
+**Why route chat through Chat service (not a new Chat service)?**
 - Chat needs RAG search, which Query already has
 - Keeps service count minimal for MVP
 - Can extract to dedicated service later if complexity grows
@@ -1144,8 +1167,8 @@ This session implemented the Gateway and Query service chat action, connecting t
 ```
 gateway/src/handlers/messageHandler.ts  # Chat action routing
 gateway/src/services/lambdaClient.ts    # Lambda function name fix
-query/src/handler.ts                    # Chat case in switch
-query/src/services/chat.service.ts      # New file - chat logic
+chat/src/handler.ts                     # Chat case in switch
+chat/src/services/chat.service.ts       # New file - chat logic
 shared/src/types.ts                     # ChatBody type
 docker-compose.yml                      # WebSocket URL
 web/.env.local                          # WebSocket URL (local override)
@@ -1177,7 +1200,7 @@ This session implemented MongoDB integration for chat history persistence and fi
 - Default values: `mongodb://root:example@mongo:27017` and `example_rag`
 - Matches docker-compose MongoDB configuration
 
-**4. Chat Service MongoDB Integration** (`query/src/services/chat.service.ts`)
+**4. Chat Service MongoDB Integration** (`chat/src/services/chat.service.ts`)
 - Integrated MongoDB operations into chat handler
 - User messages saved before RAG search
 - Assistant messages saved after response generation (with RAG context)
@@ -1232,7 +1255,7 @@ shared/src/db/mongo-connection.ts       # New - connection management
 shared/src/db/mongo-operations.ts       # New - CRUD operations
 shared/src/db/mongo-operations.test.ts  # New - unit tests
 shared/package.json                     # Added mongodb dependency
-query/src/services/chat.service.ts      # Integrated MongoDB saves
+chat/src/services/chat.service.ts       # Integrated MongoDB saves
 web/components/Chat/hooks/useChat.ts    # Fixed connection error
 ```
 
@@ -1293,18 +1316,18 @@ web/components/ThemeToggle/ThemeToggle.tsx          # Destructured styles
 web/components/Chat/tests/Chat.test.tsx             # Fixed outdated test
 ```
 
-### Session: LLM Streaming & Query Service Enhancement (2026-01-27)
+### Session: LLM Streaming & Chat Service Enhancement (2026-01-27)
 
 This session implemented true token streaming from the LLM service to the web UI, restructured the chat flow for proper separation of concerns, and added RAG relevance filtering.
 
-#### Architecture Decision: Why Gateway Calls LLM (Not Query Service)
+#### Architecture Decision: Why Gateway Calls LLM (Not Chat Service)
 
-**Problem:** The initial implementation had the Query service calling the LLM and returning the complete response. This meant no streaming—the entire response appeared at once in the UI.
+**Problem:** The initial implementation had the Chat service calling the LLM and returning the complete response. This meant no streaming—the entire response appeared at once in the UI.
 
-**Why Query Service Can't Stream:**
-- Query service runs as a Lambda function
+**Why Chat Service Can't Stream:**
+- Chat service runs as a Lambda function
 - Lambda functions return a single response—they cannot stream data incrementally
-- Even if the LLM streams tokens to the Query service, Lambda must buffer the entire response before returning
+- Even if the LLM streams tokens to the Chat service, Lambda must buffer the entire response before returning
 
 **Why Gateway Can Stream:**
 - Gateway maintains persistent WebSocket connections with clients
@@ -1322,24 +1345,24 @@ This session implemented true token streaming from the LLM service to the web UI
 
 **Trade-offs:**
 - Gateway now has more responsibility (LLM orchestration)
-- Query service is simpler (just RAG + MongoDB operations)
+- Chat service is simpler (just RAG + MongoDB operations)
 - Streaming works end-to-end
 - Messages are saved to MongoDB after streaming completes (not during)
 
 #### Changes Made
 
-**1. Query Service Restructured** (`query/src/services/chat.service.ts`, `query/src/handler.ts`)
+**1. Chat Service Restructured** (`chat/src/services/chat.service.ts`, `chat/src/handler.ts`)
 - Removed `chat` action (did everything including LLM call)
 - Added `rag` action: RAG search + save user message, returns context + system prompt
 - Added `save_message` action: Save assistant message after streaming completes
-- Query service no longer imports or calls LLM
+- Chat service no longer imports or calls LLM
 
 **2. Gateway Streaming Implementation** (`gateway/src/handlers/messageHandler.ts`)
 - `handleChat` now orchestrates the full flow:
-  1. Calls Query service `rag` action
+  1. Calls Chat service `rag` action
   2. Streams from LLM service using existing `llmClient.ts`
   3. Forwards tokens to WebSocket as `chat_stream_token` events
-  4. Calls Query service `save_message` to persist
+  4. Calls Chat service `save_message` to persist
   5. Sends `chat_stream_end` with complete content
 
 **3. WebSocket Stream Events**
@@ -1405,8 +1428,8 @@ if (rafIdRef.current === null) {
 
 #### Files Modified
 ```
-query/src/handler.ts                    # Added rag, save_message actions
-query/src/services/chat.service.ts      # Split into rag() and saveMessage()
+chat/src/handler.ts                     # Added rag, save_message actions
+chat/src/services/chat.service.ts       # Split into rag() and saveMessage()
 shared/src/types.ts                     # Added RagBody, SaveMessageBody types
 shared/src/db/operations.ts             # Added maxDistance threshold
 gateway/src/handlers/messageHandler.ts  # Full streaming orchestration
@@ -1415,7 +1438,7 @@ web/components/Chat/hooks/useChat.ts    # RAF-based smooth streaming
 web/components/Chat/MessageList.tsx     # Smarter scroll behavior
 web/components/Chat/Chat.module.scss    # Blinking cursor for streaming
 llm/src/server.py                       # Logging configuration
-docker-compose.yml                      # Query service depends on llm, mongo
+docker-compose.yml                      # Chat service depends on llm, mongo
 ```
 
 #### Debugging Notes
@@ -1510,7 +1533,7 @@ example-rag/
 │   ├── Dockerfile
 │   ├── Dockerfile.dev
 │   └── jest.config.js
-├── query/
+├── chat/
 │   ├── src/
 │   │   ├── handler.ts
 │   │   └── services/
