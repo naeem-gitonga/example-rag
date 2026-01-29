@@ -110,7 +110,7 @@ describe("chat.service", () => {
           entry_date: "2024-01-15",
           text: "Today I went to the park",
           score: 0.5,
-          moods: ["happy"],
+          topics: ["happy"],
         },
       ]);
 
@@ -135,7 +135,7 @@ describe("chat.service", () => {
       const body = JSON.parse(result.body);
 
       expect(body.rag_context).toEqual([]);
-      expect(body.system_prompt).toContain("no relevant journal entries were found");
+      expect(body.system_prompt).toContain("no relevant documents were found");
     });
 
     it("should handle getTable error gracefully (no data ingested)", async () => {
@@ -156,14 +156,14 @@ describe("chat.service", () => {
           entry_date: "2024-01-15",
           text: "Had a great day",
           score: 0.3,
-          moods: [],
+          topics: [],
         },
       ]);
 
       const result = await rag({ message: "How was my day?" });
       const body = JSON.parse(result.body);
 
-      expect(body.system_prompt).toContain("Relevant journal entries:");
+      expect(body.system_prompt).toContain("Relevant documents:");
       expect(body.system_prompt).toContain("[2024-01-15] Had a great day");
     });
 

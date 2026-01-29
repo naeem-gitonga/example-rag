@@ -1,6 +1,6 @@
 import { connect, Connection, Table } from "@lancedb/lancedb";
 import { loadConfig, TABLE_NAME, VECTOR_DIMENSION } from "../config";
-import { JournalEntry } from "../types";
+import { DocumentEntry } from "../types";
 
 const config = loadConfig();
 
@@ -45,14 +45,14 @@ export async function getTable(
     console.log(`Creating new table: ${TABLE_NAME}`);
     // Create table with a placeholder record to establish schema
     // LanceDB requires at least one record or a schema to create a table
-    const placeholderEntry: JournalEntry = {
+    const placeholderEntry: DocumentEntry = {
       id: "__placeholder__",
       entry_id: "",
       entry_date: "1970-01-01",
       chunk_index: 0,
       text: "__placeholder__",
       vector: new Array(VECTOR_DIMENSION).fill(0),
-      moods: ["__placeholder__"],  // Non-empty array for type inference
+      topics: ["__placeholder__"],  // Non-empty array for type inference
       word_count: 0,
     };
     table = await db.createTable(TABLE_NAME, [placeholderEntry]);

@@ -6,6 +6,7 @@ import { TABLE_NAME } from "../config";
 const mockTable = {
   add: jest.fn<any>(),
   search: jest.fn<any>(),
+  delete: jest.fn<any>(),
 };
 
 const mockConnection = {
@@ -81,7 +82,16 @@ describe("connection", () => {
 
       const table = await getTable(true, mockConnect as any);
 
-      expect(mockConnection.createTable).toHaveBeenCalledWith(TABLE_NAME, []);
+      expect(mockConnection.createTable).toHaveBeenCalledWith(
+        TABLE_NAME,
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: "__placeholder__",
+            text: "__placeholder__",
+          }),
+        ])
+      );
+      expect(mockTable.delete).toHaveBeenCalledWith('id = "__placeholder__"');
       expect(table).toBe(mockTable);
     });
 

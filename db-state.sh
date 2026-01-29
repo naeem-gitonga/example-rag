@@ -1,11 +1,11 @@
 #!/bin/bash
-# Query LanceDB to show all journal entries
+# Query LanceDB to show all document entries
 
 docker compose exec -T ingestion node -e "
 const { connect } = require('@lancedb/lancedb');
 
 async function main() {
-  const db = await connect('s3://lancedb/journal', {
+  const db = await connect('s3://lancedb/documents', {
     storageOptions: {
       awsAccessKeyId: 'minioadmin',
       awsSecretAccessKey: 'minioadmin',
@@ -15,7 +15,7 @@ async function main() {
     }
   });
 
-  const table = await db.openTable('journal_entries');
+  const table = await db.openTable('document_entries');
   const count = await table.countRows();
   const results = await table.query().limit(50).toArray();
 

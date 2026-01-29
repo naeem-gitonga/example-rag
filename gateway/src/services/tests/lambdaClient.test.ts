@@ -39,7 +39,7 @@ describe("lambdaClient", () => {
       });
     });
 
-    it("should invoke query lambda with correct payload", async () => {
+    it("should invoke chat lambda with correct payload", async () => {
       mockSend.mockResolvedValue({
         Payload: Buffer.from(
           JSON.stringify({
@@ -50,7 +50,7 @@ describe("lambdaClient", () => {
       });
 
       const { invokeLambda } = await import("../lambdaClient.js");
-      const result = await invokeLambda("query", {
+      const result = await invokeLambda("chat", {
         action: "query",
         body: { query: "test query", limit: 5 },
       });

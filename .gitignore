@@ -46,3 +46,4 @@ db/data/minio-data/
 minio-data/
 db/data/
 */dist
+minio-data-copy/

@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent } from "aws-lambda";
 
-export interface JournalEntry {
+export interface DocumentEntry {
   [key: string]: unknown;
   id: string;
   entry_id: string;  // Empty string if not set (LanceDB doesn't handle null well)
@@ -8,7 +8,7 @@ export interface JournalEntry {
   chunk_index: number;
   text: string;
   vector: number[];
-  moods: string[];
+  topics: string[];
   word_count: number;
 }
 
@@ -18,7 +18,7 @@ export interface AddEntryParams {
   chunkIndex: number;
   text: string;
   vector: number[];
-  moods: string[];
+  topics: string[];
   wordCount: number;
 }
 
@@ -27,7 +27,7 @@ export interface SearchResult {
   entry_id: string;
   entry_date: string;
   text: string;
-  moods: string[];
+  topics: string[];
   score: number;
 }
 
@@ -36,7 +36,7 @@ export interface IngestBody {
   action?: string;
   entry_date: string;
   text: string;
-  moods: string[];
+  topics: string[];
   entry_id?: string;
   chunk_index?: number;
 }
@@ -45,7 +45,7 @@ export interface IngestPdfBody {
   action?: string;
   entry_date: string;
   pdf_base64: string;
-  moods: string[];
+  topics: string[];
   entry_id?: string;
   filename?: string;
 }

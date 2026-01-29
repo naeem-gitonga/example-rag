@@ -1,7 +1,7 @@
 'use client';
 
 import { useFileUpload } from './hooks/useFileUpload';
-import { MoodSelector } from './MoodSelector';
+import { TopicSelector } from './TopicSelector';
 import { DateInput } from './DateInput';
 import { DropZone } from './DropZone';
 import { FileList } from './FileList';
@@ -16,8 +16,10 @@ export function FileUploadForm() {
     isDragging,
     fileDate,
     setFileDate,
-    fileMoods,
-    toggleMood,
+    fileTopics,
+    toggleTopic,
+    customTopics,
+    addCustomTopic,
     fileInputRef,
     handleDragOver,
     handleDragLeave,
@@ -39,10 +41,12 @@ export function FileUploadForm() {
         />
       </div>
 
-      <MoodSelector
-        selectedMoods={fileMoods}
-        onToggle={toggleMood}
-        label="Moods (for all files)"
+      <TopicSelector
+        selectedTopics={fileTopics}
+        onToggle={toggleTopic}
+        customTopics={customTopics}
+        onAddCustomTopic={addCustomTopic}
+        label="Topics (for all files)"
       />
 
       <DropZone

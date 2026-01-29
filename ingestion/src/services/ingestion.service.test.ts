@@ -50,7 +50,7 @@ describe("ingestion.service", () => {
     it("should return 400 when entry_date is missing", async () => {
       const result = await ingest({
         text: "some text",
-        moods: [],
+        topics: [],
       } as any);
 
       expect(result.statusCode).toBe(400);
@@ -62,7 +62,7 @@ describe("ingestion.service", () => {
     it("should return 400 when text is missing", async () => {
       const result = await ingest({
         entry_date: "2024-01-15",
-        moods: [],
+        topics: [],
       } as any);
 
       expect(result.statusCode).toBe(400);
@@ -75,7 +75,7 @@ describe("ingestion.service", () => {
       const result = await ingest({
         entry_date: "2024-01-15",
         text: "Today was a good day",
-        moods: ["happy", "calm"],
+        topics: ["happy", "calm"],
       });
 
       expect(result.statusCode).toBe(200);
@@ -89,7 +89,7 @@ describe("ingestion.service", () => {
       await ingest({
         entry_date: "2024-01-15",
         text: "Test entry",
-        moods: [],
+        topics: [],
       });
 
       expect(mockGetTable).toHaveBeenCalledWith(true);
@@ -99,7 +99,7 @@ describe("ingestion.service", () => {
       await ingest({
         entry_date: "2024-01-15",
         text: "Test entry for embedding",
-        moods: [],
+        topics: [],
       });
 
       expect(mockGetEmbedding).toHaveBeenCalledWith(
@@ -112,7 +112,7 @@ describe("ingestion.service", () => {
       await ingest({
         entry_date: "2024-01-15",
         text: "Four words in text",
-        moods: ["happy"],
+        topics: ["happy"],
         entry_id: "custom-entry-id",
         chunk_index: 2,
       });
@@ -123,7 +123,7 @@ describe("ingestion.service", () => {
         chunkIndex: 2,
         text: "Four words in text",
         vector: [0.1, 0.2, 0.3],
-        moods: ["happy"],
+        topics: ["happy"],
         wordCount: 4,
       });
     });
@@ -132,7 +132,7 @@ describe("ingestion.service", () => {
       await ingest({
         entry_date: "2024-01-15",
         text: "Test entry",
-        moods: [],
+        topics: [],
       });
 
       expect(mockAddEntry).toHaveBeenCalledWith(
@@ -143,7 +143,7 @@ describe("ingestion.service", () => {
       );
     });
 
-    it("should use empty moods array when not provided", async () => {
+    it("should use empty topics array when not provided", async () => {
       await ingest({
         entry_date: "2024-01-15",
         text: "Test entry",
@@ -152,7 +152,7 @@ describe("ingestion.service", () => {
       expect(mockAddEntry).toHaveBeenCalledWith(
         mockTable,
         expect.objectContaining({
-          moods: [],
+          topics: [],
         })
       );
     });
@@ -161,7 +161,7 @@ describe("ingestion.service", () => {
       await ingest({
         entry_date: "2024-01-15",
         text: "One two three four five six",
-        moods: [],
+        topics: [],
       });
 
       expect(mockAddEntry).toHaveBeenCalledWith(
@@ -177,7 +177,7 @@ describe("ingestion.service", () => {
     it("should return 400 when entry_date is missing", async () => {
       const result = await ingestPdf({
         pdf_base64: "JVBERi0xLjQ=",
-        moods: [],
+        topics: [],
       } as any);
 
       expect(result.statusCode).toBe(400);
@@ -189,7 +189,7 @@ describe("ingestion.service", () => {
     it("should return 400 when pdf_base64 is missing", async () => {
       const result = await ingestPdf({
         entry_date: "2024-01-15",
-        moods: [],
+        topics: [],
       } as any);
 
       expect(result.statusCode).toBe(400);
@@ -204,7 +204,7 @@ describe("ingestion.service", () => {
       const result = await ingestPdf({
         entry_date: "2024-01-15",
         pdf_base64: "JVBERi0xLjQ=",
-        moods: [],
+        topics: [],
       });
 
       expect(result.statusCode).toBe(400);
@@ -217,7 +217,7 @@ describe("ingestion.service", () => {
       const result = await ingestPdf({
         entry_date: "2024-01-15",
         pdf_base64: "JVBERi0xLjQ=",
-        moods: ["focused"],
+        topics: ["focused"],
         filename: "document.pdf",
       });
 
@@ -233,7 +233,7 @@ describe("ingestion.service", () => {
       await ingestPdf({
         entry_date: "2024-01-15",
         pdf_base64: "JVBERi0xLjQ=",
-        moods: [],
+        topics: [],
       });
 
       expect(mockParsePdf).toHaveBeenCalledWith("JVBERi0xLjQ=");
@@ -243,7 +243,7 @@ describe("ingestion.service", () => {
       await ingestPdf({
         entry_date: "2024-01-15",
         pdf_base64: "JVBERi0xLjQ=",
-        moods: [],
+        topics: [],
       });
 
       expect(mockGetEmbedding).toHaveBeenCalledWith(
@@ -256,7 +256,7 @@ describe("ingestion.service", () => {
       await ingestPdf({
         entry_date: "2024-01-15",
         pdf_base64: "JVBERi0xLjQ=",
-        moods: ["focused"],
+        topics: ["focused"],
         entry_id: "custom-id",
         filename: "report.pdf",
       });
@@ -267,7 +267,7 @@ describe("ingestion.service", () => {
         chunkIndex: 0,
         text: "Extracted PDF text content",
         vector: [0.1, 0.2, 0.3],
-        moods: ["focused"],
+        topics: ["focused"],
         wordCount: 4,
       });
     });
@@ -276,7 +276,7 @@ describe("ingestion.service", () => {
       await ingestPdf({
         entry_date: "2024-01-15",
         pdf_base64: "JVBERi0xLjQ=",
-        moods: [],
+        topics: [],
         filename: "my-document.pdf",
       });
 
@@ -288,7 +288,7 @@ describe("ingestion.service", () => {
       );
     });
 
-    it("should use empty moods array when not provided", async () => {
+    it("should use empty topics array when not provided", async () => {
       await ingestPdf({
         entry_date: "2024-01-15",
         pdf_base64: "JVBERi0xLjQ=",
@@ -297,7 +297,7 @@ describe("ingestion.service", () => {
       expect(mockAddEntry).toHaveBeenCalledWith(
         mockTable,
         expect.objectContaining({
-          moods: [],
+          topics: [],
         })
       );
     });

@@ -6,7 +6,7 @@ const INGESTION_API_URL = '/api/ingest';
 export interface SubmitEntryParams {
   entryDate: string;
   text: string;
-  moods: string[];
+  topics: string[];
   entryId?: string;
 }
 
@@ -21,7 +21,7 @@ export async function submitEntry(params: SubmitEntryParams): Promise<ApiRespons
     body: {
       entry_date: params.entryDate,
       text: params.text,
-      moods: params.moods,
+      topics: params.topics,
       ...(params.entryId && { entry_id: params.entryId }),
     },
   };
@@ -59,7 +59,7 @@ async function fileToBase64(file: File): Promise<string> {
 export async function submitFileContent(
   file: File,
   entryDate: string,
-  moods: string[]
+  topics: string[]
 ): Promise<ApiResponse> {
   const isPdf = file.name.toLowerCase().endsWith('.pdf');
 
@@ -70,7 +70,7 @@ export async function submitFileContent(
       body: {
         entry_date: entryDate,
         pdf_base64: pdfBase64,
-        moods,
+        topics,
         entry_id: file.name,
         filename: file.name,
       },
@@ -97,7 +97,7 @@ export async function submitFileContent(
   return submitEntry({
     entryDate,
     text,
-    moods,
+    topics,
     entryId: file.name,
   });
 }

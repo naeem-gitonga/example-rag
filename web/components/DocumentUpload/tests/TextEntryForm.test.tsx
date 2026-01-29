@@ -15,8 +15,8 @@ jest.mock('../DocumentUpload.module.scss', () => ({
   formGroup: 'formGroup',
   label: 'label',
   dateInput: 'dateInput',
-  moodSelector: 'moodSelector',
-  moodChip: 'moodChip',
+  topicSelector: 'topicSelector',
+  topicChip: 'topicChip',
   selected: 'selected',
   textArea: 'textArea',
   formActions: 'formActions',
@@ -25,6 +25,9 @@ jest.mock('../DocumentUpload.module.scss', () => ({
   uploading: 'uploading',
   success: 'success',
   error: 'error',
+  customTopicInputWrapper: 'customTopicInputWrapper',
+  customTopicInput: 'customTopicInput',
+  addTopicButton: 'addTopicButton',
 }));
 
 describe('TextEntryForm', () => {
@@ -33,8 +36,10 @@ describe('TextEntryForm', () => {
     setEntryText: jest.fn(),
     entryDate: '2024-01-15',
     setEntryDate: jest.fn(),
-    selectedMoods: [] as string[],
-    toggleMood: jest.fn(),
+    selectedTopics: [] as string[],
+    toggleTopic: jest.fn(),
+    customTopics: [] as string[],
+    addCustomTopic: jest.fn(),
     submitStatus: null,
     submit: jest.fn(),
     canSubmit: false,
@@ -52,18 +57,18 @@ describe('TextEntryForm', () => {
     expect(screen.getByDisplayValue('2024-01-15')).toBeInTheDocument();
   });
 
-  it('should render mood selector', () => {
+  it('should render topic selector', () => {
     render(<TextEntryForm />);
 
-    expect(screen.getByText('Moods')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'happy' })).toBeInTheDocument();
+    expect(screen.getByText('Topics')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'science' })).toBeInTheDocument();
   });
 
   it('should render text area', () => {
     render(<TextEntryForm />);
 
     expect(screen.getByText('Entry Text')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Write your journal entry here...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter your content here...')).toBeInTheDocument();
   });
 
   it('should render Save Entry button', () => {
@@ -98,7 +103,7 @@ describe('TextEntryForm', () => {
 
     render(<TextEntryForm />);
 
-    const textarea = screen.getByPlaceholderText('Write your journal entry here...');
+    const textarea = screen.getByPlaceholderText('Enter your content here...');
     fireEvent.change(textarea, { target: { value: 'New entry' } });
 
     expect(setEntryText).toHaveBeenCalledWith('New entry');
@@ -119,18 +124,18 @@ describe('TextEntryForm', () => {
     expect(setEntryDate).toHaveBeenCalledWith('2024-02-20');
   });
 
-  it('should call toggleMood when mood is clicked', () => {
-    const toggleMood = jest.fn();
+  it('should call toggleTopic when topic is clicked', () => {
+    const toggleTopic = jest.fn();
     mockUseTextEntry.mockReturnValue({
       ...defaultMockReturn,
-      toggleMood,
+      toggleTopic,
     });
 
     render(<TextEntryForm />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'happy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'science' }));
 
-    expect(toggleMood).toHaveBeenCalledWith('happy');
+    expect(toggleTopic).toHaveBeenCalledWith('science');
   });
 
   it('should call submit when Save Entry is clicked', () => {
@@ -187,16 +192,16 @@ describe('TextEntryForm', () => {
     expect(screen.getByText('Network error')).toBeInTheDocument();
   });
 
-  it('should highlight selected moods', () => {
+  it('should highlight selected topics', () => {
     mockUseTextEntry.mockReturnValue({
       ...defaultMockReturn,
-      selectedMoods: ['happy', 'calm'],
+      selectedTopics: ['science', 'physics'],
     });
 
     render(<TextEntryForm />);
 
-    expect(screen.getByRole('button', { name: 'happy' })).toHaveClass('selected');
-    expect(screen.getByRole('button', { name: 'calm' })).toHaveClass('selected');
-    expect(screen.getByRole('button', { name: 'sad' })).not.toHaveClass('selected');
+    expect(screen.getByRole('button', { name: 'science' })).toHaveClass('selected');
+    expect(screen.getByRole('button', { name: 'physics' })).toHaveClass('selected');
+    expect(screen.getByRole('button', { name: 'art' })).not.toHaveClass('selected');
   });
 });

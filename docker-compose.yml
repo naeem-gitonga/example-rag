@@ -77,7 +77,7 @@ services:
       - minio-setup
       - embedding
     environment:
-      LANCEDB_URI: s3://lancedb/journal
+      LANCEDB_URI: s3://lancedb/documents
       S3_ENDPOINT: http://minio:9000
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
@@ -97,7 +97,7 @@ services:
       - embedding
       - mongo
     environment:
-      LANCEDB_URI: s3://lancedb/journal
+      LANCEDB_URI: s3://lancedb/documents
       S3_ENDPOINT: http://minio:9000
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin

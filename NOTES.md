@@ -1,6 +1,6 @@
 # Example RAG
 
-A Retrieval-Augmented Generation (RAG) system for journal entries using LanceDB as the vector database. Designed to mirror AWS serverless architecture locally using Docker.
+A Retrieval-Augmented Generation (RAG) system for documents using LanceDB as the vector database. Designed to mirror AWS serverless architecture locally using Docker.
 
 ## Architecture
 ![architecture pic](./architecture.png)
@@ -52,7 +52,7 @@ The web app communicates entirely over WebSocket - no direct HTTP calls to Lambd
 ```
 Web App
     │
-    │  WebSocket: { action: "ingest", text: "...", entry_date: "...", moods: [...] }
+    │  WebSocket: { action: "ingest", text: "...", entry_date: "...", topics: [...] }
     │
     ▼
 Gateway
@@ -187,7 +187,7 @@ Web App (displays tokens as they arrive for "typing" effect)
 - The **system prompt** (text with RAG context baked in)
 - The **rag_context metadata** (for showing "Sources" in UI)
 
-The Gateway never sees the actual vector—it just passes text to the LLM. The LLM has no knowledge of the Chat Service, embeddings, or databases. It simply receives a system prompt (which happens to contain retrieved journal entries) and a user message, then generates a response.
+The Gateway never sees the actual vector—it just passes text to the LLM. The LLM has no knowledge of the Chat Service, embeddings, or databases. It simply receives a system prompt (which happens to contain retrieved documents) and a user message, then generates a response.
 
 ### Services
 
@@ -195,8 +195,8 @@ The Gateway never sees the actual vector—it just passes text to the LLM. The L
 |---------|-------------|
 | **web** | Next.js frontend for chat and document upload |
 | **gateway** | WebSocket server that invokes Lambda functions via AWS SDK |
-| **ingestion** | TypeScript Lambda for adding journal entries to the database |
-| **chat** | TypeScript Lambda for semantic search over journal entries |
+| **ingestion** | TypeScript Lambda for adding documents to the database |
+| **chat** | TypeScript Lambda for semantic search over documents |
 | **embedding** | Python service using sentence-transformers for vector generation |
 | **llm** | Python service using Qwen2.5-3B-Instruct for chat completions (SSE streaming) |
 | **minio** | S3-compatible object storage (mimics AWS S3 locally) |
@@ -238,17 +238,17 @@ The chat page (`/chat`) provides a real-time chat interface that communicates wi
 
 ### LanceDB (Vector Database)
 
-Single table `journal_entries` with the following columns:
+Single table `document_entries` with the following columns:
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | string | Unique identifier (UUID) |
 | `entry_id` | string \| null | Groups chunks from the same entry |
-| `entry_date` | string | Date of the journal entry |
+| `entry_date` | string | Date of the document |
 | `chunk_index` | number | Position when entry is split into chunks |
-| `text` | string | The journal entry text |
+| `text` | string | The document text |
 | `vector` | number[] | 384-dimensional embedding vector |
-| `moods` | string[] | Array of mood tags |
+| `topics` | string[] | Array of mood tags |
 | `word_count` | number | Word count of the text |
 
 ### MongoDB (Chat History)
@@ -279,7 +279,7 @@ Two collections for storing chat sessions and messages.
 | `role` | "user" \| "assistant" | Message sender |
 | `content` | string | Message text |
 | `created_at` | Date | Message timestamp |
-| `rag_context` | array \| null | Retrieved journal entries used for response (null for user messages) |
+| `rag_context` | array \| null | Retrieved documents used for response (null for user messages) |
 
 Each `rag_context` item contains: `entry_id`, `entry_date`, `text_snippet` (first 200 chars), `score` (similarity score)
 
@@ -359,11 +359,11 @@ Each `rag_context` item contains: `entry_id`, `entry_date`, `text_snippet` (firs
 - Avoids circular dependency issues
 - Clearer import paths show exact source
 
-### Moods as Array
-**Decision:** Store moods as `string[]` instead of single value.
+### Topics as Array
+**Decision:** Store topics as `string[]` instead of single value.
 
 **Why:**
-- One journal entry can describe multiple events/feelings
+- One document can describe multiple events/feelings
 - More flexible for filtering and analysis
 - Supports "happy and anxious" type entries
 
@@ -395,10 +395,10 @@ Each `rag_context` item contains: `entry_id`, `entry_date`, `text_snippet` (firs
 - Easier to reference across services
 
 ### RAG Context on Messages
-**Decision:** Store retrieved journal entries in `rag_context` field on assistant messages.
+**Decision:** Store retrieved documents in `rag_context` field on assistant messages.
 
 **Why:**
-- Records which journal entries were used to generate each response
+- Records which documents were used to generate each response
 - Useful for debugging retrieval quality
 - Enables "show sources" UI feature
 - Stores snippet + score, not full text (keeps documents small)
@@ -688,7 +688,7 @@ docker compose up -d
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LANCEDB_URI` | `s3://lancedb/journal` | LanceDB storage location |
+| `LANCEDB_URI` | `s3://lancedb/documents` | LanceDB storage location |
 | `S3_ENDPOINT` | `http://localhost:9000` | S3/MinIO endpoint |
 | `AWS_ACCESS_KEY_ID` | `minioadmin` | S3 access key |
 | `AWS_SECRET_ACCESS_KEY` | `minioadmin` | S3 secret key |
@@ -713,7 +713,7 @@ docker compose up -d
   "action": "ingest",
   "entry_date": "2024-01-15",
   "text": "Today was a good day...",
-  "moods": ["happy", "calm"],
+  "topics": ["happy", "calm"],
   "entry_id": "optional-id",
   "chunk_index": 0
 }
@@ -824,7 +824,7 @@ The vectors are *related* but not *close*. Distance might be 0.9-1.0 even though
 
 ### Similarity Threshold
 
-The RAG search uses a similarity score threshold to filter out irrelevant results. This prevents the system from returning unrelated journal entries when the user's query doesn't match any content.
+The RAG search uses a similarity score threshold to filter out irrelevant results. This prevents the system from returning unrelated documents when the user's query doesn't match any content.
 
 **Configuration** (`shared/src/db/operations.ts` called by `chat/src/services/chat.service.ts`):
 ```typescript
@@ -850,8 +850,8 @@ searchSimilar(table, queryVector, limit, maxDistance = 1.2)
 | 1.5+ | Very permissive - rarely filters anything |
 
 **Example:**
-- User asks "hey" → no journal entries about greetings → high distance scores → filtered out
-- User asks "how was my trip to Paris?" → journal entry about Paris trip → low distance → included
+- User asks "hey" → no documents about greetings → high distance scores → filtered out
+- User asks "how was my trip to Paris?" → document about Paris trip → low distance → included
 
 **Why this matters:**
 Without a threshold, vector search always returns the top N results regardless of relevance. A query like "hey" would return whatever entries happen to be least dissimilar, even if they're completely unrelated (e.g., an entry about gold). The threshold ensures only genuinely relevant context is passed to the LLM.
@@ -867,21 +867,21 @@ The **system prompt** is the instruction set that tells the LLM who it is, how t
 ```typescript
 function buildSystemPrompt(ragContext: RagContext[]): string {
   if (ragContext.length === 0) {
-    return `You are a helpful assistant for a personal journal application.
-The user is asking a question, but no relevant journal entries were found.
-Respond helpfully and suggest they might want to add more journal entries or rephrase their question.`;
+    return `You are a helpful assistant for a personal document knowledge base.
+The user is asking a question, but no relevant documents were found.
+Respond helpfully and suggest they might want to add more documents or rephrase their question.`;
   }
 
   const contextEntries = ragContext
     .map((ctx) => `[${ctx.entry_date}] ${ctx.text_snippet}`)
     .join("\n\n");
 
-  return `You are a helpful assistant for a personal journal application.
-Use the following journal entries to answer the user's question.
+  return `You are a helpful assistant for a personal document knowledge base.
+Use the following documents to answer the user's question.
 Be conversational and reference specific details from the entries when relevant.
 If the entries don't contain enough information to answer, say so honestly.
 
-Relevant journal entries:
+Relevant documents:
 ${contextEntries}`;
 }
 ```
@@ -895,10 +895,10 @@ Messages sent to LLM:
 ┌─────────────────────────────────────────────────────────────┐
 │ role: "system"                                              │
 │ content: "You are a helpful assistant for a personal        │
-│          journal application. Use the following journal     │
+│          document knowledge base. Use the following journal     │
 │          entries to answer the user's question...           │
 │                                                             │
-│          Relevant journal entries:                          │
+│          Relevant documents:                          │
 │          [2026-01-27] the price of gold is $5,220.50..."    │
 ├─────────────────────────────────────────────────────────────┤
 │ role: "user"                                                │
@@ -910,14 +910,14 @@ Messages sent to LLM:
 
 | Aspect | Effect |
 |--------|--------|
-| **Identity** | "You are a helpful assistant for a personal journal application" tells the LLM its role and domain |
+| **Identity** | "You are a helpful assistant for a personal document knowledge base" tells the LLM its role and domain |
 | **Behavior** | "Be conversational and reference specific details" shapes response style |
 | **Boundaries** | "If the entries don't contain enough information, say so honestly" prevents hallucination |
 | **Context injection** | RAG results are embedded directly in the prompt, giving the LLM access to user's data |
 
 **Without a system prompt**, the LLM would be a generic assistant with no knowledge of:
-- Its purpose (journaling)
-- The user's data (journal entries)
+- Its purpose (documents)
+- The user's data (documents)
 - How to respond (conversational, honest about limitations)
 
 **Customization examples:**
@@ -926,8 +926,8 @@ Messages sent to LLM:
 |----------|---------------------------|
 | More formal tone | "Respond in a professional, formal tone" |
 | Therapy-style | "You are a supportive listener. Ask reflective questions about the user's feelings" |
-| Data analysis | "Analyze patterns across journal entries. Look for trends in mood, topics, and frequency" |
-| Strict factual | "Only answer questions that can be directly answered from the journal entries. Never speculate" |
+| Data analysis | "Analyze patterns across documents. Look for trends in mood, topics, and frequency" |
+| Strict factual | "Only answer questions that can be directly answered from the documents. Never speculate" |
 
 **The RAG + System Prompt pattern:**
 
@@ -1409,7 +1409,7 @@ if (rafIdRef.current === null) {
 
 **6. RAG Similarity Threshold** (`shared/src/db/operations.ts`)
 
-**Problem:** User says "hey" → system returns journal entry about gold (irrelevant).
+**Problem:** User says "hey" → system returns document about gold (irrelevant).
 
 **Root cause:** Vector search always returns top N results, even if they're dissimilar.
 

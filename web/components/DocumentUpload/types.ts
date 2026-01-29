@@ -8,25 +8,23 @@ export interface UploadStatus {
   message?: string;
 }
 
-export const AVAILABLE_MOODS = [
-  'happy',
-  'sad',
-  'anxious',
-  'calm',
-  'excited',
-  'frustrated',
-  'grateful',
-  'hopeful',
-  'tired',
-  'motivated',
+export const DEFAULT_TOPICS = [
+  'science',
+  'physics',
+  'art',
+  'music',
+  'painting',
+  'technology',
+  'security',
+  'politics',
 ] as const;
 
-export type Mood = (typeof AVAILABLE_MOODS)[number];
+export type Topic = (typeof DEFAULT_TOPICS)[number];
 
 export interface IngestPayload {
   action: 'ingest';
   entry_date: string;
   text: string;
-  moods: string[];
+  topics: string[];
   entry_id?: string;
 }

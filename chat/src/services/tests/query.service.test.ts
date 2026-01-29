@@ -42,7 +42,7 @@ describe("query.service", () => {
         entry_id: "entry1",
         entry_date: "2024-01-15",
         text: "First result",
-        moods: ["happy"],
+        topics: ["happy"],
         score: 0.1,
       },
     ]);
@@ -80,7 +80,7 @@ describe("query.service", () => {
             entry_id: "entry1",
             entry_date: "2024-01-15",
             text: "First result",
-            moods: ["happy"],
+            topics: ["happy"],
             score: 0.1,
           },
         ],
@@ -140,7 +140,7 @@ describe("query.service", () => {
           entry_id: "entry1",
           entry_date: "2024-01-15",
           text: "First result",
-          moods: ["happy"],
+          topics: ["happy"],
           score: 0.1,
         },
         {
@@ -148,7 +148,7 @@ describe("query.service", () => {
           entry_id: "entry2",
           entry_date: "2024-01-14",
           text: "Second result",
-          moods: ["calm"],
+          topics: ["calm"],
           score: 0.2,
         },
       ]);

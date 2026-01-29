@@ -1,5 +1,5 @@
 import type { Table } from "@lancedb/lancedb";
-import type { JournalEntry, AddEntryParams, SearchResult } from "../types";
+import type { DocumentEntry, AddEntryParams, SearchResult } from "../types";
 
 export async function addEntry(
   table: Table,
@@ -7,14 +7,14 @@ export async function addEntry(
 ): Promise<string> {
   const id = crypto.randomUUID();
 
-  const entry: JournalEntry = {
+  const entry: DocumentEntry = {
     id,
     entry_id: params.entryId ?? "",  // Use empty string instead of null for LanceDB compatibility
     entry_date: params.entryDate,
     chunk_index: params.chunkIndex,
     text: params.text,
     vector: params.vector,
-    moods: params.moods,
+    topics: params.topics,
     word_count: params.wordCount,
   };
 
@@ -40,7 +40,7 @@ export async function searchSimilar(
       entry_id: row.entry_id,
       entry_date: row.entry_date,
       text: row.text,
-      moods: row.moods ?? [],
+      topics: row.topics ?? [],
       score: row._distance ?? 0,
     }))
     .filter((result) => result.score <= maxDistance);

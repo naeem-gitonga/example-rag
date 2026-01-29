@@ -26,7 +26,7 @@ export async function ingest(body: IngestBody): Promise<APIGatewayProxyResult> {
     chunkIndex: body.chunk_index ?? 0,
     text: body.text,
     vector,
-    moods: body.moods ?? [],
+    topics: body.topics ?? [],
     wordCount,
   });
 
@@ -66,7 +66,7 @@ export async function ingestPdf(body: IngestPdfBody): Promise<APIGatewayProxyRes
     chunkIndex: 0,
     text,
     vector,
-    moods: body.moods ?? [],
+    topics: body.topics ?? [],
     wordCount,
   });
 

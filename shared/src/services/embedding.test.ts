@@ -15,7 +15,7 @@ describe("embedding", () => {
       const mockEmbedding = [0.1, 0.2, 0.3, 0.4, 0.5];
       mockFetch.mockResolvedValue({
         ok: true,
-        json: jest.fn<any>().mockResolvedValue({ embedding: mockEmbedding }),
+        json: jest.fn<any>().mockResolvedValue({ embeddings: [mockEmbedding], dimension: 5, normalized: true }),
       });
 
       const result = await getEmbedding("http://embedding:8001", "test text");
@@ -42,7 +42,7 @@ describe("embedding", () => {
     it("should handle different service URLs", async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: jest.fn<any>().mockResolvedValue({ embedding: [0.1] }),
+        json: jest.fn<any>().mockResolvedValue({ embeddings: [[0.1]], dimension: 1, normalized: true }),
       });
 
       await getEmbedding("http://localhost:3000", "text");
@@ -56,7 +56,7 @@ describe("embedding", () => {
     it("should handle empty text", async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: jest.fn<any>().mockResolvedValue({ embedding: [0.0, 0.0, 0.0] }),
+        json: jest.fn<any>().mockResolvedValue({ embeddings: [[0.0, 0.0, 0.0]], dimension: 3, normalized: true }),
       });
 
       const result = await getEmbedding("http://embedding:8001", "");
@@ -74,7 +74,7 @@ describe("embedding", () => {
       const longText = "word ".repeat(1000);
       mockFetch.mockResolvedValue({
         ok: true,
-        json: jest.fn<any>().mockResolvedValue({ embedding: [0.5] }),
+        json: jest.fn<any>().mockResolvedValue({ embeddings: [[0.5]], dimension: 1, normalized: true }),
       });
 
       await getEmbedding("http://embedding:8001", longText);
