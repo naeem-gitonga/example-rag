@@ -15,11 +15,11 @@ describe("config", () => {
 
   describe("constants", () => {
     it("should have correct TABLE_NAME", () => {
-      expect(TABLE_NAME).toBe("journal_entries");
+      expect(TABLE_NAME).toBe("document_entries");
     });
 
     it("should have correct VECTOR_DIMENSION", () => {
-      expect(VECTOR_DIMENSION).toBe(384);
+      expect(VECTOR_DIMENSION).toBe(1024);
     });
   });
 
@@ -34,7 +34,7 @@ describe("config", () => {
 
       const config = loadConfig();
 
-      expect(config.lancedbUri).toBe("s3://lancedb/journal");
+      expect(config.lancedbUri).toBe("s3://lancedb/documents");
       expect(config.s3Endpoint).toBe("http://localhost:9000");
       expect(config.awsAccessKeyId).toBe("minioadmin");
       expect(config.awsSecretAccessKey).toBe("minioadmin");

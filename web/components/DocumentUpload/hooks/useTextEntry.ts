@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { UploadStatus } from '../types';
 import { submitEntry } from '../api';
+import { useCustomTopics } from './useCustomTopics';
 
 export function getTodayDate(): string {
   return new Date().toISOString().split('T')[0];
@@ -11,8 +12,10 @@ export interface UseTextEntryReturn {
   setEntryText: (text: string) => void;
   entryDate: string;
   setEntryDate: (date: string) => void;
-  selectedMoods: string[];
-  toggleMood: (mood: string) => void;
+  selectedTopics: string[];
+  toggleTopic: (topic: string) => void;
+  customTopics: string[];
+  addCustomTopic: (topic: string) => void;
   submitStatus: UploadStatus | null;
   submit: () => Promise<void>;
   canSubmit: boolean;
@@ -21,14 +24,15 @@ export interface UseTextEntryReturn {
 export function useTextEntry(): UseTextEntryReturn {
   const [entryText, setEntryText] = useState('');
   const [entryDate, setEntryDate] = useState(getTodayDate);
-  const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [submitStatus, setSubmitStatus] = useState<UploadStatus | null>(null);
+  const { customTopics, addCustomTopic } = useCustomTopics();
 
-  const toggleMood = useCallback((mood: string) => {
-    setSelectedMoods((current) =>
-      current.includes(mood)
-        ? current.filter((m) => m !== mood)
-        : [...current, mood]
+  const toggleTopic = useCallback((topic: string) => {
+    setSelectedTopics((current) =>
+      current.includes(topic)
+        ? current.filter((t) => t !== topic)
+        : [...current, topic]
     );
   }, []);
 
@@ -44,7 +48,7 @@ export function useTextEntry(): UseTextEntryReturn {
       await submitEntry({
         entryDate,
         text: entryText,
-        moods: selectedMoods,
+        topics: selectedTopics,
       });
 
       setSubmitStatus({
@@ -54,7 +58,7 @@ export function useTextEntry(): UseTextEntryReturn {
       });
 
       setEntryText('');
-      setSelectedMoods([]);
+      setSelectedTopics([]);
     } catch (error) {
       setSubmitStatus({
         name: 'Text Entry',
@@ -62,15 +66,17 @@ export function useTextEntry(): UseTextEntryReturn {
         message: error instanceof Error ? error.message : 'Submit failed',
       });
     }
-  }, [entryText, entryDate, selectedMoods]);
+  }, [entryText, entryDate, selectedTopics]);
 
   return {
     entryText,
     setEntryText,
     entryDate,
     setEntryDate,
-    selectedMoods,
-    toggleMood,
+    selectedTopics,
+    toggleTopic,
+    customTopics,
+    addCustomTopic,
     submitStatus,
     submit,
     canSubmit: entryText.trim().length > 0,

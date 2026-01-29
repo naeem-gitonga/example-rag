@@ -12,7 +12,7 @@ describe('api', () => {
     const defaultParams: SubmitEntryParams = {
       entryDate: '2024-01-15',
       text: 'Test entry text',
-      moods: ['happy', 'calm'],
+      topics: ['happy', 'calm'],
     };
 
     it('should submit entry with correct payload', async () => {
@@ -38,7 +38,7 @@ describe('api', () => {
         body: {
           entry_date: '2024-01-15',
           text: 'Test entry text',
-          moods: ['happy', 'calm'],
+          topics: ['happy', 'calm'],
         },
       });
     });
@@ -133,7 +133,7 @@ describe('api', () => {
         body: {
           entry_date: '2024-01-15',
           text: 'File content here',
-          moods: ['happy'],
+          topics: ['happy'],
           entry_id: 'test.txt',
         },
       });

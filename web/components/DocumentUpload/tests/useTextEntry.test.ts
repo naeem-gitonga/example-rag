@@ -35,9 +35,9 @@ describe('useTextEntry', () => {
       expect(result.current.entryDate).toBe(today);
     });
 
-    it('should initialize with empty moods', () => {
+    it('should initialize with empty topics', () => {
       const { result } = renderHook(() => useTextEntry());
-      expect(result.current.selectedMoods).toEqual([]);
+      expect(result.current.selectedTopics).toEqual([]);
     });
 
     it('should initialize with null submit status', () => {
@@ -95,41 +95,41 @@ describe('useTextEntry', () => {
     });
   });
 
-  describe('toggleMood', () => {
-    it('should add mood when not selected', () => {
+  describe('toggleTopic', () => {
+    it('should add topic when not selected', () => {
       const { result } = renderHook(() => useTextEntry());
 
       act(() => {
-        result.current.toggleMood('happy');
+        result.current.toggleTopic('happy');
       });
 
-      expect(result.current.selectedMoods).toContain('happy');
+      expect(result.current.selectedTopics).toContain('happy');
     });
 
-    it('should remove mood when already selected', () => {
+    it('should remove topic when already selected', () => {
       const { result } = renderHook(() => useTextEntry());
 
       act(() => {
-        result.current.toggleMood('happy');
+        result.current.toggleTopic('happy');
       });
 
       act(() => {
-        result.current.toggleMood('happy');
+        result.current.toggleTopic('happy');
       });
 
-      expect(result.current.selectedMoods).not.toContain('happy');
+      expect(result.current.selectedTopics).not.toContain('happy');
     });
 
-    it('should allow multiple moods', () => {
+    it('should allow multiple topics', () => {
       const { result } = renderHook(() => useTextEntry());
 
       act(() => {
-        result.current.toggleMood('happy');
-        result.current.toggleMood('calm');
-        result.current.toggleMood('grateful');
+        result.current.toggleTopic('happy');
+        result.current.toggleTopic('calm');
+        result.current.toggleTopic('grateful');
       });
 
-      expect(result.current.selectedMoods).toEqual(['happy', 'calm', 'grateful']);
+      expect(result.current.selectedTopics).toEqual(['happy', 'calm', 'grateful']);
     });
   });
 
@@ -170,7 +170,7 @@ describe('useTextEntry', () => {
       act(() => {
         result.current.setEntryText('Test entry');
         result.current.setEntryDate('2024-01-15');
-        result.current.toggleMood('happy');
+        result.current.toggleTopic('happy');
       });
 
       await act(async () => {
@@ -180,7 +180,7 @@ describe('useTextEntry', () => {
       expect(mockSubmitEntry).toHaveBeenCalledWith({
         entryDate: '2024-01-15',
         text: 'Test entry',
-        moods: ['happy'],
+        topics: ['happy'],
       });
     });
 
@@ -208,7 +208,7 @@ describe('useTextEntry', () => {
 
       act(() => {
         result.current.setEntryText('Test entry');
-        result.current.toggleMood('happy');
+        result.current.toggleTopic('happy');
       });
 
       await act(async () => {
@@ -216,7 +216,7 @@ describe('useTextEntry', () => {
       });
 
       expect(result.current.entryText).toBe('');
-      expect(result.current.selectedMoods).toEqual([]);
+      expect(result.current.selectedTopics).toEqual([]);
     });
 
     it('should set error status on failed submit', async () => {

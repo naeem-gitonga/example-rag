@@ -6,7 +6,7 @@ interface IngestMessage {
   action: "ingest";
   text: string;
   entry_date: string;
-  moods?: string[];
+  topics?: string[];
   entry_id?: string;
   chunk_index?: number;
 }
@@ -115,7 +115,7 @@ async function handleIngest(socket: WebSocket, message: IngestMessage): Promise<
     body: {
       text: message.text,
       entry_date: message.entry_date,
-      moods: message.moods,
+      topics: message.topics,
       entry_id: message.entry_id,
       chunk_index: message.chunk_index,
     },

@@ -12,9 +12,9 @@ describe("operations", () => {
       const params: AddEntryParams = {
         entryDate: "2024-01-15",
         chunkIndex: 0,
-        text: "Test journal entry",
+        text: "Test document entry",
         vector: [0.1, 0.2, 0.3],
-        moods: ["happy", "calm"],
+        topics: ["happy", "calm"],
         wordCount: 3,
       };
 
@@ -24,12 +24,12 @@ describe("operations", () => {
       expect(mockTable.add).toHaveBeenCalledWith([
         expect.objectContaining({
           id: expect.any(String),
-          entry_id: null,
+          entry_id: "",
           entry_date: "2024-01-15",
           chunk_index: 0,
-          text: "Test journal entry",
+          text: "Test document entry",
           vector: [0.1, 0.2, 0.3],
-          moods: ["happy", "calm"],
+          topics: ["happy", "calm"],
           word_count: 3,
         }),
       ]);
@@ -48,7 +48,7 @@ describe("operations", () => {
         chunkIndex: 1,
         text: "Another entry",
         vector: [0.4, 0.5, 0.6],
-        moods: ["anxious"],
+        topics: ["anxious"],
         wordCount: 2,
       };
 
@@ -72,7 +72,7 @@ describe("operations", () => {
         chunkIndex: 0,
         text: "Test",
         vector: [0.1],
-        moods: [],
+        topics: [],
         wordCount: 1,
       };
 
@@ -91,7 +91,7 @@ describe("operations", () => {
           entry_id: "entry1",
           entry_date: "2024-01-15",
           text: "First result",
-          moods: ["happy"],
+          topics: ["happy"],
           _distance: 0.1,
         },
         {
@@ -99,7 +99,7 @@ describe("operations", () => {
           entry_id: null,
           entry_date: "2024-01-14",
           text: "Second result",
-          moods: ["sad", "tired"],
+          topics: ["sad", "tired"],
           _distance: 0.2,
         },
       ];
@@ -124,7 +124,7 @@ describe("operations", () => {
           entry_id: "entry1",
           entry_date: "2024-01-15",
           text: "First result",
-          moods: ["happy"],
+          topics: ["happy"],
           score: 0.1,
         },
         {
@@ -132,20 +132,20 @@ describe("operations", () => {
           entry_id: null,
           entry_date: "2024-01-14",
           text: "Second result",
-          moods: ["sad", "tired"],
+          topics: ["sad", "tired"],
           score: 0.2,
         },
       ]);
     });
 
-    it("should handle missing moods with empty array", async () => {
+    it("should handle missing topics with empty array", async () => {
       const mockResults = [
         {
           id: "id1",
           entry_id: null,
           entry_date: "2024-01-15",
-          text: "No moods",
-          moods: undefined,
+          text: "No topics",
+          topics: undefined,
           _distance: 0.5,
         },
       ];
@@ -161,7 +161,7 @@ describe("operations", () => {
 
       const results = await searchSimilar(mockTable as any, [0.1], 1);
 
-      expect(results[0].moods).toEqual([]);
+      expect(results[0].topics).toEqual([]);
     });
 
     it("should handle missing _distance with 0", async () => {
@@ -171,7 +171,7 @@ describe("operations", () => {
           entry_id: null,
           entry_date: "2024-01-15",
           text: "No distance",
-          moods: [],
+          topics: [],
         },
       ];
 

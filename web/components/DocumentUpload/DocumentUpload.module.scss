@@ -143,14 +143,14 @@
   }
 }
 
-// Mood selector
-.moodSelector {
+// Topic selector
+.topicSelector {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.moodChip {
+.topicChip {
   padding: 0.5rem 1rem;
   border: 1px solid var(--border);
   border-radius: 2rem;
@@ -169,6 +169,52 @@
     background: var(--primary);
     border-color: var(--primary);
     color: white;
+  }
+}
+
+.customTopicInputWrapper {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.customTopicInput {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  background: var(--background);
+  color: var(--foreground);
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  &::placeholder {
+    color: var(--muted);
+  }
+}
+
+.addTopicButton {
+  padding: 0.5rem 1rem;
+  background: var(--primary);
+  color: white;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover:not(:disabled) {
+    background: var(--primary-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 

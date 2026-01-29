@@ -1,4 +1,4 @@
-export const TABLE_NAME = "journal_entries";
+export const TABLE_NAME = "document_entries";
 export const VECTOR_DIMENSION = 1024; // all-MiniLM-L6-v2 outputs 384 dimensions
 
 export interface AppConfig {
@@ -22,7 +22,7 @@ export function loadConfig(): AppConfig {
     : s3Endpoint.startsWith("http://");
 
   return {
-    lancedbUri: process.env.LANCEDB_URI ?? "s3://lancedb/journal",
+    lancedbUri: process.env.LANCEDB_URI ?? "s3://lancedb/documents",
     s3Endpoint,
     s3AllowHttp,
     awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "minioadmin",

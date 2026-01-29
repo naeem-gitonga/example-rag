@@ -12,21 +12,21 @@ const config = loadConfig();
 
 function buildSystemPrompt(ragContext: RagContext[]): string {
   if (ragContext.length === 0) {
-    return `You are a helpful assistant for a personal journal application.
-The user is asking a question, but no relevant journal entries were found.
-Respond helpfully and suggest they might want to add more journal entries or rephrase their question.`;
+    return `You are a helpful assistant for a document knowledge base.
+The user is asking a question, but no relevant documents were found.
+Respond helpfully and suggest they might want to add more documents or rephrase their question.`;
   }
 
   const contextEntries = ragContext
     .map((ctx) => `[${ctx.entry_date}] ${ctx.text_snippet}`)
     .join("\n\n");
 
-  return `You are a helpful assistant for a personal journal application.
-Use the following journal entries to answer the user's question.
-Be conversational and reference specific details from the entries when relevant.
-If the entries don't contain enough information to answer, say so honestly.
+  return `You are a helpful assistant for a document knowledge base.
+Use the following documents to answer the user's question.
+Be conversational and reference specific details from the documents when relevant.
+If the documents don't contain enough information to answer, say so honestly.
 
-Relevant journal entries:
+Relevant documents:
 ${contextEntries}`;
 }
 
@@ -58,7 +58,7 @@ export async function rag(body: RagBody): Promise<APIGatewayProxyResult> {
     console.log(`[RAG] Query: "${body.message.substring(0, 50)}..." → ${results.length} results`);
     results.forEach((r, i) => console.log(`  [${i}] distance=${r.score.toFixed(3)} date=${r.entry_date}`));
   } catch (error) {
-    console.log("No journal entries found, skipping RAG search");
+    console.log("No documents found, skipping RAG search");
   }
 
   // Build RAG context from search results

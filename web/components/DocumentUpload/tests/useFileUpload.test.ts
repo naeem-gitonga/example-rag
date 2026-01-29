@@ -41,9 +41,9 @@ describe('useFileUpload', () => {
       expect(result.current.fileDate).toBe(today);
     });
 
-    it('should initialize with empty moods', () => {
+    it('should initialize with empty topics', () => {
       const { result } = renderHook(() => useFileUpload());
-      expect(result.current.fileMoods).toEqual([]);
+      expect(result.current.fileTopics).toEqual([]);
     });
   });
 
@@ -59,29 +59,29 @@ describe('useFileUpload', () => {
     });
   });
 
-  describe('toggleMood', () => {
-    it('should add mood when not selected', () => {
+  describe('toggleTopic', () => {
+    it('should add topic when not selected', () => {
       const { result } = renderHook(() => useFileUpload());
 
       act(() => {
-        result.current.toggleMood('happy');
+        result.current.toggleTopic('happy');
       });
 
-      expect(result.current.fileMoods).toContain('happy');
+      expect(result.current.fileTopics).toContain('happy');
     });
 
-    it('should remove mood when already selected', () => {
+    it('should remove topic when already selected', () => {
       const { result } = renderHook(() => useFileUpload());
 
       act(() => {
-        result.current.toggleMood('happy');
+        result.current.toggleTopic('happy');
       });
 
       act(() => {
-        result.current.toggleMood('happy');
+        result.current.toggleTopic('happy');
       });
 
-      expect(result.current.fileMoods).not.toContain('happy');
+      expect(result.current.fileTopics).not.toContain('happy');
     });
   });
 
@@ -200,7 +200,7 @@ describe('useFileUpload', () => {
           target: { files: [file] },
         } as unknown as React.ChangeEvent<HTMLInputElement>;
         result.current.handleFileSelect(event);
-        result.current.toggleMood('happy');
+        result.current.toggleTopic('happy');
         result.current.setFileDate('2024-01-15');
       });
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTextEntry } from './hooks/useTextEntry';
-import { MoodSelector } from './MoodSelector';
+import { TopicSelector } from './TopicSelector';
 import { DateInput } from './DateInput';
 import { StatusMessage } from './StatusMessage';
 import styles from './DocumentUpload.module.scss';
@@ -21,8 +21,10 @@ export function TextEntryForm() {
     setEntryText,
     entryDate,
     setEntryDate,
-    selectedMoods,
-    toggleMood,
+    selectedTopics,
+    toggleTopic,
+    customTopics,
+    addCustomTopic,
     submitStatus,
     submit,
     canSubmit,
@@ -32,7 +34,12 @@ export function TextEntryForm() {
     <div className={textEntryForm}>
       <DateInput value={entryDate} onChange={setEntryDate} />
 
-      <MoodSelector selectedMoods={selectedMoods} onToggle={toggleMood} />
+      <TopicSelector
+        selectedTopics={selectedTopics}
+        onToggle={toggleTopic}
+        customTopics={customTopics}
+        onAddCustomTopic={addCustomTopic}
+      />
 
       <div className={formGroup}>
         <label className={label}>Entry Text</label>
@@ -40,7 +47,7 @@ export function TextEntryForm() {
           value={entryText}
           onChange={(e) => setEntryText(e.target.value)}
           className={textArea}
-          placeholder="Write your journal entry here..."
+          placeholder="Enter your content here..."
           rows={8}
         />
       </div>

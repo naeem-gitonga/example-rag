@@ -16,9 +16,12 @@ jest.mock('../DocumentUpload.module.scss', () => ({
   formGroup: 'formGroup',
   label: 'label',
   dateInput: 'dateInput',
-  moodSelector: 'moodSelector',
-  moodChip: 'moodChip',
+  topicSelector: 'topicSelector',
+  topicChip: 'topicChip',
   selected: 'selected',
+  customTopicInputWrapper: 'customTopicInputWrapper',
+  customTopicInput: 'customTopicInput',
+  addTopicButton: 'addTopicButton',
   dropzone: 'dropzone',
   dragging: 'dragging',
   fileInput: 'fileInput',
@@ -50,8 +53,10 @@ describe('FileUploadForm', () => {
     isDragging: false,
     fileDate: '2024-01-15',
     setFileDate: jest.fn(),
-    fileMoods: [] as string[],
-    toggleMood: jest.fn(),
+    fileTopics: [] as string[],
+    toggleTopic: jest.fn(),
+    customTopics: [] as string[],
+    addCustomTopic: jest.fn(),
     fileInputRef: mockFileInputRef,
     handleDragOver: jest.fn(),
     handleDragLeave: jest.fn(),
@@ -74,10 +79,10 @@ describe('FileUploadForm', () => {
     expect(screen.getByText('Entry Date (for all files)')).toBeInTheDocument();
   });
 
-  it('should render mood selector with label', () => {
+  it('should render topic selector with label', () => {
     render(<FileUploadForm />);
 
-    expect(screen.getByText('Moods (for all files)')).toBeInTheDocument();
+    expect(screen.getByText('Topics (for all files)')).toBeInTheDocument();
   });
 
   it('should render dropzone', () => {
@@ -101,18 +106,18 @@ describe('FileUploadForm', () => {
     expect(setFileDate).toHaveBeenCalledWith('2024-02-20');
   });
 
-  it('should call toggleMood when mood is clicked', () => {
-    const toggleMood = jest.fn();
+  it('should call toggleTopic when topic is clicked', () => {
+    const toggleTopic = jest.fn();
     mockUseFileUpload.mockReturnValue({
       ...defaultMockReturn,
-      toggleMood,
+      toggleTopic,
     });
 
     render(<FileUploadForm />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'happy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'science' }));
 
-    expect(toggleMood).toHaveBeenCalledWith('happy');
+    expect(toggleTopic).toHaveBeenCalledWith('science');
   });
 
   it('should call openFileDialog when dropzone is clicked', () => {
@@ -149,15 +154,15 @@ describe('FileUploadForm', () => {
     expect(screen.getByText('Selected Files (1)')).toBeInTheDocument();
   });
 
-  it('should highlight selected moods', () => {
+  it('should highlight selected topics', () => {
     mockUseFileUpload.mockReturnValue({
       ...defaultMockReturn,
-      fileMoods: ['happy'],
+      fileTopics: ['science'],
     });
 
     render(<FileUploadForm />);
 
-    expect(screen.getByRole('button', { name: 'happy' })).toHaveClass('selected');
+    expect(screen.getByRole('button', { name: 'science' })).toHaveClass('selected');
   });
 
   it('should apply dragging class when isDragging is true', () => {

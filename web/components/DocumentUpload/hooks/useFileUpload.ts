@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { UploadStatus } from '../types';
 import { submitFileContent } from '../api';
+import { useCustomTopics } from './useCustomTopics';
 
 export function getTodayDate(): string {
   return new Date().toISOString().split('T')[0];
@@ -12,8 +13,10 @@ export interface UseFileUploadReturn {
   isDragging: boolean;
   fileDate: string;
   setFileDate: (date: string) => void;
-  fileMoods: string[];
-  toggleMood: (mood: string) => void;
+  fileTopics: string[];
+  toggleTopic: (topic: string) => void;
+  customTopics: string[];
+  addCustomTopic: (topic: string) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   handleDragOver: (e: React.DragEvent) => void;
   handleDragLeave: (e: React.DragEvent) => void;
@@ -29,15 +32,16 @@ export function useFileUpload(): UseFileUploadReturn {
   const [files, setFiles] = useState<File[]>([]);
   const [uploadStatuses, setUploadStatuses] = useState<UploadStatus[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [fileMoods, setFileMoods] = useState<string[]>([]);
+  const [fileTopics, setFileTopics] = useState<string[]>([]);
   const [fileDate, setFileDate] = useState(getTodayDate);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { customTopics, addCustomTopic } = useCustomTopics();
 
-  const toggleMood = useCallback((mood: string) => {
-    setFileMoods((current) =>
-      current.includes(mood)
-        ? current.filter((m) => m !== mood)
-        : [...current, mood]
+  const toggleTopic = useCallback((topic: string) => {
+    setFileTopics((current) =>
+      current.includes(topic)
+        ? current.filter((t) => t !== topic)
+        : [...current, topic]
     );
   }, []);
 
@@ -92,7 +96,7 @@ export function useFileUpload(): UseFileUploadReturn {
       );
 
       try {
-        await submitFileContent(file, fileDate, fileMoods);
+        await submitFileContent(file, fileDate, fileTopics);
 
         setUploadStatuses((prev) =>
           prev.map((status, index) =>
@@ -115,7 +119,7 @@ export function useFileUpload(): UseFileUploadReturn {
         );
       }
     }
-  }, [files, fileDate, fileMoods]);
+  }, [files, fileDate, fileTopics]);
 
   const clearCompleted = useCallback(() => {
     const pendingIndices = uploadStatuses
@@ -138,8 +142,10 @@ export function useFileUpload(): UseFileUploadReturn {
     isDragging,
     fileDate,
     setFileDate,
-    fileMoods,
-    toggleMood,
+    fileTopics,
+    toggleTopic,
+    customTopics,
+    addCustomTopic,
     fileInputRef,
     handleDragOver,
     handleDragLeave,

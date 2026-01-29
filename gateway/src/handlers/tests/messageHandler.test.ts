@@ -28,7 +28,7 @@ describe("messageHandler", () => {
       await handleMessage(mockSocket as unknown as WebSocket, "session1", Buffer.from("not json"));
 
       expect(mockSocket.send).toHaveBeenCalledWith(
-        JSON.stringify({ error: "Invalid JSON" })
+        JSON.stringify({ action: "error", error: "Invalid JSON" })
       );
     });
 
@@ -42,7 +42,7 @@ describe("messageHandler", () => {
       );
 
       expect(mockSocket.send).toHaveBeenCalledWith(
-        JSON.stringify({ error: "Invalid message format - action required" })
+        JSON.stringify({ action: "error", error: "Invalid message format - action required" })
       );
     });
 
@@ -56,7 +56,7 @@ describe("messageHandler", () => {
       );
 
       expect(mockSocket.send).toHaveBeenCalledWith(
-        JSON.stringify({ error: "Unknown action: unknown" })
+        JSON.stringify({ action: "error", error: "Unknown action: unknown" })
       );
     });
 
@@ -70,7 +70,7 @@ describe("messageHandler", () => {
       );
 
       expect(mockSocket.send).toHaveBeenCalledWith(
-        JSON.stringify({ error: "Invalid JSON" })
+        JSON.stringify({ action: "error", error: "Invalid JSON" })
       );
     });
   });
@@ -92,7 +92,7 @@ describe("messageHandler", () => {
             action: "ingest",
             text: "test entry",
             entry_date: "2024-01-15",
-            moods: ["happy"],
+            topics: ["happy"],
           })
         )
       );
@@ -102,7 +102,7 @@ describe("messageHandler", () => {
         body: {
           text: "test entry",
           entry_date: "2024-01-15",
-          moods: ["happy"],
+          topics: ["happy"],
           entry_id: undefined,
           chunk_index: undefined,
         },
@@ -141,7 +141,7 @@ describe("messageHandler", () => {
         body: {
           text: "test",
           entry_date: "2024-01-15",
-          moods: undefined,
+          topics: undefined,
           entry_id: "entry-123",
           chunk_index: 2,
         },
@@ -170,7 +170,7 @@ describe("messageHandler", () => {
         )
       );
 
-      expect(mockInvokeLambda).toHaveBeenCalledWith("query", {
+      expect(mockInvokeLambda).toHaveBeenCalledWith("chat", {
         action: "query",
         body: {
           query: "how was my day?",
@@ -203,7 +203,7 @@ describe("messageHandler", () => {
         )
       );
 
-      expect(mockInvokeLambda).toHaveBeenCalledWith("query", {
+      expect(mockInvokeLambda).toHaveBeenCalledWith("chat", {
         action: "query",
         body: {
           query: "test query",
@@ -247,10 +247,10 @@ describe("messageHandler", () => {
       await handleMessage(
         mockSocket as unknown as WebSocket,
         "session1",
-        Buffer.from(JSON.stringify({ action: "health", service: "query" }))
+        Buffer.from(JSON.stringify({ action: "health", service: "chat" }))
       );
 
-      expect(mockInvokeLambda).toHaveBeenCalledWith("query", {
+      expect(mockInvokeLambda).toHaveBeenCalledWith("chat", {
         action: "health",
       });
     });
@@ -269,7 +269,7 @@ describe("messageHandler", () => {
       );
 
       expect(mockSocket.send).toHaveBeenCalledWith(
-        JSON.stringify({ error: "Lambda timeout" })
+        JSON.stringify({ action: "error", error: "Lambda timeout" })
       );
     });
 
@@ -285,7 +285,7 @@ describe("messageHandler", () => {
       );
 
       expect(mockSocket.send).toHaveBeenCalledWith(
-        JSON.stringify({ error: "Internal error" })
+        JSON.stringify({ action: "error", error: "Internal error" })
       );
     });
 
