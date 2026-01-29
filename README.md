@@ -4,3 +4,5 @@ A Retrieval-Augmented Generation (RAG) system for journal entries using LanceDB 
 
 ## Architecture
 ![architecture pic](./architecture.png)
+
+See at [https://naeemgitonga.com/articles/example-rag](https://naeemgitonga.com/articles/example-rag?fromWebsite=readme-in-repo)
