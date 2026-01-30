@@ -1,22 +1,22 @@
 FROM public.ecr.aws/lambda/nodejs:24 AS builder
 
-# Set working directory to parent of LAMBDA_TASK_ROOT
 WORKDIR /var
 
-# Copy shared types (needed for @shared/* imports during build)
-COPY shared/ ./shared/
+# Copy package files first for better layer caching
+COPY shared/package*.json ./shared/
+COPY ingestion/package*.json ./ingestion/
 
-# Copy ingestion service with directory structure
+# Install dependencies (cached unless package.json changes)
+WORKDIR /var/ingestion
+RUN npm install
+
+# Now copy source files
+WORKDIR /var
+COPY shared/ ./shared/
 COPY ingestion/ ./ingestion/
 
-# Install dependencies
+# Build
 WORKDIR /var/ingestion
-RUN npm ci
-
-# Symlink node_modules so shared types can resolve dependencies
-RUN ln -s /var/ingestion/node_modules /var/shared/node_modules
-
-# Build TypeScript (resolves @shared/* paths and compiles)
 RUN npm run build
 
 # Final stage
@@ -29,8 +29,8 @@ COPY ingestion/package*.json ${LAMBDA_TASK_ROOT}/
 WORKDIR ${LAMBDA_TASK_ROOT}
 RUN npm ci --omit=dev
 
-# Copy built JavaScript from builder stage
-COPY --from=builder /var/ingestion/dist/ ${LAMBDA_TASK_ROOT}/dist/
+# Copy bundled JavaScript from builder stage
+COPY --from=builder /var/ingestion/dist/handler.mjs ${LAMBDA_TASK_ROOT}/dist/
 
 # Set the CMD to your handler
-CMD [ "dist/ingestion/src/handler.handler" ]
+CMD [ "dist/handler.handler" ]

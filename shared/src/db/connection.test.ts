@@ -95,22 +95,21 @@ describe("connection", () => {
       expect(table).toBe(mockTable);
     });
 
-    it("should return cached table on subsequent calls", async () => {
+    it("should open table fresh on each call", async () => {
       mockConnection.tableNames.mockResolvedValue([TABLE_NAME]);
 
       await getTable(false, mockConnect as any);
       await getTable(false, mockConnect as any);
 
-      expect(mockConnection.openTable).toHaveBeenCalledTimes(1);
+      expect(mockConnection.openTable).toHaveBeenCalledTimes(2);
     });
   });
 
   describe("resetConnection", () => {
-    it("should clear cached connection and table", async () => {
+    it("should clear cached connection", async () => {
       mockConnection.tableNames.mockResolvedValue([TABLE_NAME]);
 
       await initConnection(mockConnect as any);
-      await getTable(false, mockConnect as any);
 
       resetConnection();
 

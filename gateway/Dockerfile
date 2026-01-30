@@ -1,4 +1,4 @@
-FROM node:22-alpine AS deps
+FROM node:24-alpine AS deps
 
 WORKDIR /app
 
@@ -6,7 +6,7 @@ COPY gateway/package*.json ./
 
 RUN npm install
 
-FROM node:22-alpine AS dev
+FROM node:24-alpine AS dev
 
 WORKDIR /app
 

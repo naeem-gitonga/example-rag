@@ -1,22 +1,22 @@
 FROM public.ecr.aws/lambda/nodejs:24 AS builder
 
-# Set working directory to parent of LAMBDA_TASK_ROOT
 WORKDIR /var
 
-# Copy shared types (needed for @shared/* imports during build)
-COPY shared/ ./shared/
+# Copy package files first for better layer caching
+COPY shared/package*.json ./shared/
+COPY chat/package*.json ./chat/
 
-# Copy chat service with directory structure
+# Install dependencies (cached unless package.json changes)
+WORKDIR /var/chat
+RUN npm install
+
+# Now copy source files
+WORKDIR /var
+COPY shared/ ./shared/
 COPY chat/ ./chat/
 
-# Install dependencies
+# Build
 WORKDIR /var/chat
-RUN npm ci
-
-# Symlink node_modules so shared types can resolve dependencies
-RUN ln -s /var/chat/node_modules /var/shared/node_modules
-
-# Build TypeScript (resolves @shared/* paths and compiles)
 RUN npm run build
 
 # Final stage
@@ -29,8 +29,8 @@ COPY chat/package*.json ${LAMBDA_TASK_ROOT}/
 WORKDIR ${LAMBDA_TASK_ROOT}
 RUN npm ci --omit=dev
 
-# Copy built JavaScript from builder stage
-COPY --from=builder /var/chat/dist/ ${LAMBDA_TASK_ROOT}/dist/
+# Copy bundled JavaScript from builder stage
+COPY --from=builder /var/chat/dist/handler.mjs ${LAMBDA_TASK_ROOT}/dist/
 
 # Set the CMD to your handler
-CMD [ "dist/chat/src/handler.handler" ]
+CMD [ "dist/handler.handler" ]
