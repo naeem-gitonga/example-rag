@@ -5,7 +5,6 @@ import { DocumentEntry } from "../types";
 const config = loadConfig();
 
 let connection: Connection | null = null;
-let table: Table | null = null;
 
 export async function initConnection(connectDep = connect): Promise<Connection> {
   if (connection) {
@@ -31,13 +30,9 @@ export async function getTable(
   createIfMissing: boolean = false,
   connectDep = connect
 ): Promise<Table> {
-  if (table) {
-    return table;
-  }
-
   const db = await initConnection(connectDep);
   const tables = await db.tableNames();
-
+  let table: Table;
   if (tables.includes(TABLE_NAME)) {
     console.log(`Opening existing table: ${TABLE_NAME}`);
     table = await db.openTable(TABLE_NAME);
@@ -68,5 +63,4 @@ export async function getTable(
 
 export function resetConnection(): void {
   connection = null;
-  table = null;
 }

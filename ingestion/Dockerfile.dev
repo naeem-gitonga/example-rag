@@ -2,15 +2,21 @@ FROM public.ecr.aws/lambda/nodejs:24 AS builder
 
 WORKDIR /build
 
-# Copy shared module (needed for @shared/* imports during build)
-COPY shared/ ./shared/
+# Copy package files first for better layer caching
+COPY shared/package*.json ./shared/
+COPY ingestion/package*.json ./ingestion/
 
-# Copy ingestion service
+# Install dependencies (cached unless package.json changes)
+WORKDIR /build/ingestion
+RUN npm install
+
+# Now copy source files
+WORKDIR /build
+COPY shared/ ./shared/
 COPY ingestion/ ./ingestion/
 
-# Install dependencies and build
+# Build
 WORKDIR /build/ingestion
-RUN npm ci
 RUN npm run build
 
 # Final stage

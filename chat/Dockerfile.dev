@@ -2,15 +2,21 @@ FROM public.ecr.aws/lambda/nodejs:24 AS builder
 
 WORKDIR /build
 
-# Copy shared module (needed for @shared/* imports during build)
-COPY shared/ ./shared/
+# Copy package files first for better layer caching
+COPY shared/package*.json ./shared/
+COPY chat/package*.json ./chat/
 
-# Copy chat service
+# Install dependencies (cached unless package.json changes)
+WORKDIR /build/chat
+RUN npm install
+
+# Now copy source files
+WORKDIR /build
+COPY shared/ ./shared/
 COPY chat/ ./chat/
 
-# Install dependencies and build
+# Build
 WORKDIR /build/chat
-RUN npm ci
 RUN npm run build
 
 # Final stage
